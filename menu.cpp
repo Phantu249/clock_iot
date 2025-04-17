@@ -1,79 +1,167 @@
 #include "menu.h"
 
+// Frame 16x16 cho TIME_SETTING (256 bytes, 1 byte/pixel)
+const uint8_t timeSettingFrame[] PROGMEM = {
+    0,0,0,0,0,15,0,0,0,0,15,0,0,0,0,0,
+    0,0,0,0,15,0,15,0,0,15,0,15,0,0,0,0,
+    0,0,0,15,0,0,0,0,0,0,0,0,15,0,0,0,
+    0,0,0,0,0,15,0,0,0,0,15,0,0,0,0,0,
+    0,15,0,0,0,0,15,15,15,0,0,0,0,15,0,0,
+    15,0,0,0,0,0,0,15,0,0,0,0,0,0,15,0,
+    0,0,0,0,0,0,0,15,0,0,0,0,0,0,0,0,
+    0,0,15,0,0,0,15,15,15,0,0,0,15,0,0,0,
+    0,0,15,0,0,0,15,15,15,0,0,0,15,0,0,0,
+    0,0,0,0,0,0,0,15,0,0,0,0,0,0,0,0,
+    15,0,0,0,0,0,0,15,0,0,0,0,0,0,15,0,
+    0,15,0,0,0,0,15,15,15,0,0,0,0,15,0,0,
+    0,0,0,0,0,15,0,0,0,0,15,0,0,0,0,0,
+    0,0,0,15,0,0,0,0,0,0,0,0,15,0,0,0,
+    0,0,0,0,15,0,15,0,0,15,0,15,0,0,0,0,
+    0,0,0,0,0,15,0,0,0,0,15,0,0,0,0,0
+};
+
+// Frame 16x16 cho BLUETOOTH_SETTING (256 bytes, 1 byte/pixel)
+const uint8_t bluetoothSettingFrame[] PROGMEM = {
+    0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,3,0,3,0,0,0,0,0,0,0,
+    0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,
+    0,0,0,0,3,0,0,0,0,0,3,0,0,0,0,0,
+    0,0,0,3,0,0,0,0,0,0,0,3,0,0,0,0,
+    0,0,3,0,0,0,0,0,0,0,0,0,3,0,0,0,
+    0,3,0,0,0,0,0,3,0,0,0,0,0,3,0,0,
+    3,0,0,0,0,3,3,3,3,0,0,0,0,0,3,0,
+    3,0,0,0,0,3,3,3,3,0,0,0,0,0,3,0,
+    0,3,0,0,0,0,0,3,0,0,0,0,0,3,0,0,
+    0,0,3,0,0,0,0,0,0,0,0,0,3,0,0,0,
+    0,0,0,3,0,0,0,0,0,0,0,3,0,0,0,0,
+    0,0,0,0,3,0,0,0,0,0,3,0,0,0,0,0,
+    0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,
+    0,0,0,0,0,0,3,0,3,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0
+};
+
+// Frame 16x16 cho GAME1 (256 bytes, 1 byte/pixel)
+const uint8_t game1Frame[] PROGMEM = {
+    0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0,
+    0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,
+    0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,0,
+    0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,
+    0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,
+    0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,0,
+    0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,
+    0,0,0,0,1,1,1,1,1,1,1,0,0,0,0,0,
+    0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,
+    0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+};
+
+CRGB colors[16] = {
+        CRGB::Black,   // OFF (0)
+        CRGB::Red,     // RED (1)
+        CRGB::Green,   // GREEN (2)
+        CRGB::Blue,    // BLUE (3)
+        CRGB::Yellow,  // YELLOW (4)
+        CRGB::Cyan,    // CYAN (5)
+        CRGB::Magenta, // MAGENTA (6)
+        CRGB::White,   // WHITE (7)
+        CRGB::Orange,  // ORANGE (8)
+        CRGB::Purple,  // PURPLE (9)
+        CRGB::Pink,    // PINK (10)
+        CRGB::Lime,    // LIME (11)
+        CRGB::Teal,    // TEAL (12)
+        CRGB::Violet,  // VIOLET (13)
+        CRGB::Gold,    // GOLD (14)
+        CRGB::Silver   // SILVER (15)
+    };
+
 Menu::Menu() {
-    _frame = 5; // Ví dụ: 30 FPS
-
-    // Khởi tạo các frame cho từng tùy chọn menu
-    for (int i = 0; i < MENU_OPTION_COUNT; i++) {
-        for (int j = 0; j < NUM_LEDS; j++) {
-            _frames[i][j] = CRGB::Black; // Mặc định tất cả LED tắt
-        }
-    }
-
-    // Tùy chỉnh frame cho TIME_SETTING
-    // Ví dụ: Hiển thị chữ "TIME" hoặc biểu tượng đồng hồ
-    for (int i = 0; i < 16; i++) {
-        for (int j = 0; j < 16; j++) {
-            // Thiết kế mẫu cho TIME_SETTING (có thể dùng bitmap)
-            if ((i == 4 && j >= 4 && j <= 11) || (i == 8 && j >= 4 && j <= 11)) {
-                _frames[TIME_SETTING][i * 16 + j] = CRGB::Blue; // Ví dụ: Màu xanh
-            }
-        }
-    }
-
-    // Tùy chỉnh frame cho BLUETOOTH_SETTING
-    // Ví dụ: Hiển thị biểu tượng Bluetooth
-    for (int i = 0; i < 16; i++) {
-        for (int j = 0; j < 16; j++) {
-            // Thiết kế mẫu cho Bluetooth (ví dụ: hình chữ B đơn giản)
-            if ((i == 6 && j == 8) || (i == 7 && j == 7) || (i == 7 && j == 9) ||
-                (i == 8 && j == 8) || (i == 9 && j == 7) || (i == 9 && j == 9)) {
-                _frames[BLUETOOTH_SETTING][i * 16 + j] = CRGB::Cyan; // Ví dụ: Màu cyan
-            }
-        }
-    }
-
-    // Tùy chỉnh frame cho GAME1
-    // Ví dụ: Hiển thị biểu tượng game
-    for (int i = 0; i < 16; i++) {
-        for (int j = 0; j < 16; j++) {
-            // Thiết kế mẫu cho GAME1 (ví dụ: hình vuông)
-            if (i >= 6 && i <= 9 && j >= 6 && j <= 9) {
-                _frames[GAME1][i * 16 + j] = CRGB::Red; // Ví dụ: Màu đỏ
-            }
-        }
-    }
+  _frame = 20;
+  _currentOption = TIME_SETTING;
+  _isSliding = false;
+  _slideOffset = 0;
+  _slideDirection = UP;
+  for (int j = 0; j < NUM_LEDS; j++) {
+    _slideFrame[j] = CRGB::Black;
+  }
 }
 
-
 int Menu::getIndex(uint8_t x, uint8_t y) {
-  if (y % 2 == 0) {
-    return y * NUM_COLS + x;
+  uint8_t physicalY = NUM_ROWS - 1 - y;  // y=0 -> physicalY=15, y=15 -> physicalY=0
+  if (physicalY % 2 == 0) {
+    return physicalY * NUM_COLS + x;  // Hàng chẵn: x tăng (trái -> phải)
   } else {
-    return y * NUM_COLS + (NUM_COLS - 1 - x);
+    return physicalY * NUM_COLS + (NUM_COLS - 1 - x);  // Hàng lẻ: x giảm (phải -> trái)
   }
+}
+
+void Menu::renderFrame(MENU_OPTION option, CRGB* frame) {
+    const uint8_t* frameData;
+
+    switch (option) {
+        case TIME_SETTING:
+            frameData = timeSettingFrame;
+            break;
+        case BLUETOOTH_SETTING:
+            frameData = bluetoothSettingFrame;
+            break;
+        case GAME1:
+            frameData = game1Frame;
+            break;
+        default:
+            return;
+    }
+
+    for (int j = 0; j < NUM_LEDS; j++) {
+        frame[j] = CRGB::Black;
+    }
+
+    for (int y = 0; y < NUM_ROWS; y++) {
+        for (int x = 0; x < NUM_COLS; x++) {
+            int index = getIndex(x, y);
+            int pixelIndex = y * NUM_COLS + x; // 1 byte mỗi pixel
+            uint8_t colorIndex = pgm_read_byte(&frameData[pixelIndex]); // Lấy giá trị 0-15
+            frame[index] = colors[colorIndex];
+        }
+    }
 }
 
 CRGB* Menu::draw() {
   if (_isSliding) {
+    CRGB currentFrame[NUM_LEDS];
+    CRGB nextFrame[NUM_LEDS];
+
+    renderFrame(_currentOption, currentFrame);
+    renderFrame(_nextOption, nextFrame);
+
     for (uint8_t y = 0; y < NUM_ROWS; y++) {
       for (uint8_t x = 0; x < NUM_COLS; x++) {
-        int virtualY1 = y + _slideOffset;
-        int virtualY2 = y + _slideOffset - NUM_ROWS;
+        int virtualY1, virtualY2;
+        if (_slideDirection == UP) {
+          // Trượt lên: frame hiện tại đi lên, frame tiếp theo vào từ dưới
+          virtualY1 = y - _slideOffset;             // Frame hiện tại trượt lên
+          virtualY2 = y - _slideOffset + NUM_ROWS;  // Frame tiếp theo vào từ dưới
+        } else {
+          // Trượt xuống: frame hiện tại đi xuống, frame tiếp theo vào từ trên
+          virtualY1 = y + _slideOffset;             // Frame hiện tại trượt xuống
+          virtualY2 = y + _slideOffset - NUM_ROWS;  // Frame tiếp theo vào từ trên
+        }
 
         int index = getIndex(x, y);
         _slideFrame[index] = CRGB::Black;
 
-        // Lấy từ frame hiện tại (trượt lên)
         if (virtualY1 >= 0 && virtualY1 < NUM_ROWS) {
           int srcIndex = getIndex(x, virtualY1);
-          _slideFrame[index] = _frames[_currentOption][srcIndex];
+          _slideFrame[index] = currentFrame[srcIndex];
         }
 
-        // Lấy từ frame tiếp theo (xuất hiện từ dưới)
         if (virtualY2 >= 0 && virtualY2 < NUM_ROWS) {
           int srcIndex = getIndex(x, virtualY2);
-          _slideFrame[index] = _frames[_nextOption][srcIndex];
+          _slideFrame[index] = nextFrame[srcIndex];
         }
       }
     }
@@ -83,16 +171,15 @@ CRGB* Menu::draw() {
     if (_slideOffset >= NUM_ROWS) {
       _currentOption = _nextOption;
       _isSliding = false;
-      memcpy(_slideFrame, _frames[_currentOption], sizeof(_slideFrame));
+      renderFrame(_currentOption, _slideFrame);
     }
 
     return _slideFrame;
   }
 
-  return _frames[_currentOption];
+  renderFrame(_currentOption, _slideFrame);
+  return _slideFrame;
 }
-
-
 
 void Menu::onButton(Button button, Callback callback) {
   if (_isSliding) return;
@@ -116,13 +203,17 @@ void Menu::onButton(Button button, Callback callback) {
 }
 
 void Menu::onButtonUp() {
+  if (_isSliding) return;
   _nextOption = static_cast<MENU_OPTION>((_currentOption + 1) % MENU_OPTION_COUNT);
+  _slideDirection = UP;
   _slideOffset = 0;
   _isSliding = true;
 }
 
 void Menu::onButtonDown() {
+  if (_isSliding) return;
   _nextOption = static_cast<MENU_OPTION>((_currentOption + MENU_OPTION_COUNT - 1) % MENU_OPTION_COUNT);
+  _slideDirection = DOWN;
   _slideOffset = 0;
   _isSliding = true;
 }
@@ -136,7 +227,7 @@ void Menu::onButtonRight(Callback callback) {
     Screen* s = NULL;
     switch (_currentOption) {
       case TIME_SETTING:
-        // s = new TimeSettingScreen(); // bạn thêm ở đây nếu cần
+        // s = new TimeSettingScreen(); // Thêm nếu cần
         break;
       case BLUETOOTH_SETTING:
         break;

@@ -7,7 +7,7 @@
 #define NUM_ROWS     16
 #define NUM_COLS     16
 #define NUM_LEDS     NUM_ROWS * NUM_COLS     // Số lượng LED
-#define LED_TYPE    WS2812B   // Loại LED 
+#define LED_TYPE    NEOPIXEL   // Loại LED 
 #define BRIGHTNESS 5
 
 typedef enum : uint8_t {
