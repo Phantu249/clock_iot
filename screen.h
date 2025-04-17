@@ -12,7 +12,7 @@ typedef enum : uint8_t {
   BUTTON_RIGHT = 38
 } Button;
 
-typedef void (*Callback)(void*);
+typedef void (*Callback)(void*, State newState);
 
 class Screen {
   protected:

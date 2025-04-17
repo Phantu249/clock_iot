@@ -3,17 +3,38 @@
 
 #include <FastLED.h>
 
-#define LED_PIN     5         // Chân tín hiệu
-#define NUM_ROWS     16
-#define NUM_COLS     16
-#define NUM_LEDS     NUM_ROWS * NUM_COLS     // Số lượng LED
-#define LED_TYPE    NEOPIXEL   // Loại LED 
+#define LED_PIN 17  // Chân tín hiệu
+#define NUM_ROWS 16
+#define NUM_COLS 16
+#define NUM_LEDS NUM_ROWS* NUM_COLS  // Số lượng LED
+#define LED_TYPE NEOPIXEL            // Loại LED
 #define BRIGHTNESS 5
 
 typedef enum : uint8_t {
   CLOCK,
   MENU,
-  GAME
+  GAME,
+  BLE,
+  CUSTOM
 } State;
+
+const CRGB colors[16] = {
+  CRGB::Black,    // OFF (0)
+  CRGB::Red,      // RED (1)
+  CRGB::Green,    // GREEN (2)
+  CRGB::Blue,     // BLUE (3)
+  CRGB::Yellow,   // YELLOW (4)
+  CRGB::Cyan,     // CYAN (5)
+  CRGB::Magenta,  // MAGENTA (6)
+  CRGB::White,    // WHITE (7)
+  CRGB::Orange,   // ORANGE (8)
+  CRGB::Purple,   // PURPLE (9)
+  CRGB::Pink,     // PINK (10)
+  CRGB::Lime,     // LIME (11)
+  CRGB::Teal,     // TEAL (12)
+  CRGB::Violet,   // VIOLET (13)
+  CRGB::Gold,     // GOLD (14)
+  CRGB::Silver    // SILVER (15)
+};
 
 #endif

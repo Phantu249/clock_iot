@@ -1,4 +1,6 @@
 #include "menu.h"
+#include "ble.h"
+#include "config.h"
 
 // Frame 16x16 cho TIME_SETTING (256 bytes, 1 byte/pixel)
 const uint8_t timeSettingFrame[] PROGMEM = {
@@ -59,25 +61,6 @@ const uint8_t game1Frame[] PROGMEM = {
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
-
-CRGB colors[16] = {
-        CRGB::Black,   // OFF (0)
-        CRGB::Red,     // RED (1)
-        CRGB::Green,   // GREEN (2)
-        CRGB::Blue,    // BLUE (3)
-        CRGB::Yellow,  // YELLOW (4)
-        CRGB::Cyan,    // CYAN (5)
-        CRGB::Magenta, // MAGENTA (6)
-        CRGB::White,   // WHITE (7)
-        CRGB::Orange,  // ORANGE (8)
-        CRGB::Purple,  // PURPLE (9)
-        CRGB::Pink,    // PINK (10)
-        CRGB::Lime,    // LIME (11)
-        CRGB::Teal,    // TEAL (12)
-        CRGB::Violet,  // VIOLET (13)
-        CRGB::Gold,    // GOLD (14)
-        CRGB::Silver   // SILVER (15)
-    };
 
 Menu::Menu() {
   _frame = 20;
@@ -223,6 +206,7 @@ void Menu::onButtonLeft() {}
 void Menu::onButtonRight() {}
 
 void Menu::onButtonRight(Callback callback) {
+  State newState;
   if (callback) {
     Screen* s = NULL;
     switch (_currentOption) {
@@ -230,13 +214,16 @@ void Menu::onButtonRight(Callback callback) {
         // s = new TimeSettingScreen(); // Thêm nếu cần
         break;
       case BLUETOOTH_SETTING:
+        // do nothing
+        newState = BLE;
         break;
       case GAME1:
         break;
       default:
         break;
     }
-    if (s) callback(s);
+    if (s && _currentOption != BLUETOOTH_SETTING) callback(s, newState);
+    else callback(NULL, newState);
   }
 }
 

@@ -3,25 +3,6 @@
 
 #include "screen.h"
 
-// typedef enum : uint8_t {
-// OFF = 0,       // 0: Tắt (Black)
-// RED = 1,       // 1: Đỏ
-// GREEN = 2,     // 2: Xanh lá
-// BLUE = 3,      // 3: Xanh dương
-// YELLOW = 4,    // 4: Vàng
-// CYAN = 5,      // 5: Xanh lam
-// MAGENTA = 6,   // 6: Tím hồng
-// WHITE = 7,     // 7: Trắng
-// ORANGE = 8,    // 8: Cam
-// PURPLE = 9,    // 9: Tím
-// PINK = 10,     // 10: Hồng
-// LIME = 11,     // 11: Xanh chanh
-// TEAL = 12,     // 12: Xanh ngọc
-// VIOLET = 13,   // 13: Tím nhạt
-// GOLD = 14,     // 14: Vàng kim
-// SILVER = 15    // 15: Bạc
-// } COLOR;
-
 typedef enum : uint8_t {
   TIME_SETTING,
   BLUETOOTH_SETTING,
