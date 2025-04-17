@@ -6,14 +6,14 @@
 #include <NimBLEDevice.h>
 #include <WiFi.h>
 
-const char* ssid = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
+const char* ssid = "Phòng 403";
+const char* password = "44443333";
 
 static const uint32_t WIFI_TIMEOUT_MS = 10000;
 
 uint32_t timestamp = 0;
 uint64_t lastUpdate = 0;
-int8_t offset = 0;
+int8_t offset = 7;
 char* ntpServer = "pool.ntp.org";
 
 CRGB frame[NUM_LEDS];
@@ -155,7 +155,7 @@ void setup() {
   getTime();
 
   appState = State::CLOCK;
-  screen = new Clock(timestamp);
+  screen = new Clock(timestamp, offset);
   bleScreen = new Ble(new CustomBLECharacteristicCallbacks());
 
   frameQueue = xQueueCreate(4, sizeof(CRGB *));  // queue chứa con trỏ
@@ -206,7 +206,7 @@ void controllerTask(void *param) {
           switch (btn) {
             case BUTTON_LEFT:
               delete screen;
-              screen = new Clock(timestamp);
+              screen = new Clock(timestamp, offset);
               appState = CLOCK;
               break;
             case BUTTON_RIGHT:

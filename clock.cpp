@@ -16,8 +16,9 @@ const uint8_t digit_patterns[10][5] = {
   {0x07, 0x01, 0x07, 0x05, 0x07}, // 9
 };
 
-Clock::Clock(uint32_t timestamp) {
+Clock::Clock(uint32_t timestamp, int8_t offset) {
   _timestamp = timestamp;
+  _offset = offset;
   _frame = 1;
 }
 
@@ -27,7 +28,7 @@ CRGB* Clock::draw() {
   fill_solid(buffer, NUM_LEDS, CRGB::Black);
   fill_solid(frame, NUM_LEDS, CRGB::Black);
 
-  uint8_t hours = (_timestamp % 86400) / 3600;
+  uint8_t hours = ((_timestamp + (_offset * 3600)) % 86400) / 3600;
   uint8_t minutes = (_timestamp % 3600) / 60;
 
   uint8_t h1 = hours / 10;

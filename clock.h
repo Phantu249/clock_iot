@@ -8,9 +8,10 @@
 class Clock : public Screen {
   protected:
     uint32_t _timestamp;
+    int8_t _offset;
 
   public:
-    Clock(uint32_t timestamp);
+    Clock(uint32_t timestamp, int8_t offset);
 
     CRGB* draw() override;
     void setTimestamp(uint32_t timestamp);
