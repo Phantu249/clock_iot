@@ -34,26 +34,20 @@ CRGB* Clock::draw() {
 
   for (int y = 0; y < 5; y++) {
     for (int x = 0; x < 3; x++) {
-      if (digit_patterns[h1][y] & (1 << (3-x))) {
-        frame[(y + 2) * 16 + x + 5] = CRGB::Red;
+      if (digit_patterns[h1][y] & (1 << (2-x))) {
+        frame[(y + 2) * 16 + x + 4] = CRGB::Red;
       }
-    }
-
-    for (int x = 0; x < 5; x++) {
-      if (digit_patterns[h2][y] & (1 << (3-x))) {
-        frame[(y + 2) * 16 + x + 10] = CRGB::Red;
+      
+      if (digit_patterns[h2][y] & (1 << (2-x))) {
+        frame[(y + 2) * 16 + x + 9] = CRGB::Red;
       }
-    }
 
-    for (int x = 0; x < 5; x++) {
-      if (digit_patterns[m1][y] & (1 << (3-x))) {
-        frame[(y + 9) * 16 + x + 5] = CRGB::Green;
+      if (digit_patterns[m1][y] & (1 << (2-x))) {
+        frame[(y + 9) * 16 + x + 4] = CRGB::Green;
       }
-    }
 
-    for (int x = 0; x < 5; x++) {
-      if (digit_patterns[m2][y] & (1 << (3-x))) {
-        frame[(y + 9) * 16 + x + 10] = CRGB::Green;
+      if (digit_patterns[m2][y] & (1 << (2-x))) {
+        frame[(y + 9) * 16 + x + 9] = CRGB::Green;
       }
     }
   }
