@@ -15,17 +15,10 @@ protected:
   bool isAdvertising = false;
   bool canReAdv = false;
   bool isConnected = false;
-  CRGB frame[NUM_LEDS];
 
 public:
   Ble(NimBLECharacteristicCallbacks* onWrite);
   CRGB* draw() override;
-  void onButton(Button button, Callback callback = NULL) override;
-  void onButtonUp() override;
-  void onButtonDown() override;
-  void onButtonLeft() override;
-  void onButtonRight() override;
-  uint8_t getFrame() override;
   void startAdvertising();
   void stopAdvertising();
   void onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) override;

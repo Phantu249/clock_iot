@@ -68,9 +68,6 @@ Menu::Menu() {
   _isSliding = false;
   _slideOffset = 0;
   _slideDirection = UP;
-  for (int j = 0; j < NUM_LEDS; j++) {
-    _slideFrame[j] = CRGB::Black;
-  }
 }
 
 int Menu::getIndex(uint8_t x, uint8_t y) {
@@ -135,16 +132,16 @@ CRGB* Menu::draw() {
         }
 
         int index = getIndex(x, y);
-        _slideFrame[index] = CRGB::Black;
+        frame[index] = CRGB::Black;
 
         if (virtualY1 >= 0 && virtualY1 < NUM_ROWS) {
           int srcIndex = getIndex(x, virtualY1);
-          _slideFrame[index] = currentFrame[srcIndex];
+          frame[index] = currentFrame[srcIndex];
         }
 
         if (virtualY2 >= 0 && virtualY2 < NUM_ROWS) {
           int srcIndex = getIndex(x, virtualY2);
-          _slideFrame[index] = nextFrame[srcIndex];
+          frame[index] = nextFrame[srcIndex];
         }
       }
     }
@@ -154,14 +151,15 @@ CRGB* Menu::draw() {
     if (_slideOffset >= NUM_ROWS) {
       _currentOption = _nextOption;
       _isSliding = false;
-      renderFrame(_currentOption, _slideFrame);
+      renderFrame(_currentOption, frame);
     }
 
-    return _slideFrame;
+    return frame;
   }
 
-  renderFrame(_currentOption, _slideFrame);
-  return _slideFrame;
+  renderFrame(_currentOption, frame);
+
+  return frame;
 }
 
 void Menu::onButton(Button button, Callback callback) {
@@ -225,8 +223,4 @@ void Menu::onButtonRight(Callback callback) {
     if (s && _currentOption != BLUETOOTH_SETTING) callback(s, newState);
     else callback(NULL, newState);
   }
-}
-
-uint8_t Menu::getFrame() {
-  return _frame;
 }

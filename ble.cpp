@@ -97,14 +97,3 @@ CRGB* Ble::draw() {
 
   return frame;
 }
-
-// Button handlers (default: no action)
-void Ble::onButton(Button button, Callback callback) {}
-void Ble::onButtonUp() {}
-void Ble::onButtonDown() {}
-void Ble::onButtonLeft() {}
-void Ble::onButtonRight() {}
-
-uint8_t Ble::getFrame() {
-  return _frame;
-}
