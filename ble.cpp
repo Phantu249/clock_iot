@@ -39,7 +39,7 @@ Ble::Ble(NimBLECharacteristicCallbacks* onWrite) {
     ALARM_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::WRITE);
 
   _pCharacteristicWifi = _pService->createCharacteristic(
-    WIFI_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::WRITE);
+    WIFI_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::NOTIFY);
 
   _pCharacteristicTimeMode = _pService->createCharacteristic(
     TIMEMODE_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::WRITE);

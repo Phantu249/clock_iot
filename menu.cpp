@@ -45,6 +45,8 @@ const uint8_t bluetoothSettingFrame[] PROGMEM = {
 // Frame 16x16 cho GAME1 (256 bytes, 1 byte/pixel)
 const uint8_t game1Frame[] PROGMEM = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0,
   0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
   0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,
@@ -57,10 +59,7 @@ const uint8_t game1Frame[] PROGMEM = {
   0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-
 };
 
 Menu::Menu() {
@@ -82,7 +81,7 @@ int Menu::getIndex(uint8_t x, uint8_t y) {
 }
 
 
-void Menu::renderFrame(MENU_OPTION option, CRGB* frame) {
+void Menu::renderFrame(MenuOption option, CRGB* frame) {
   const uint8_t* frameData;
 
   switch (option) {
@@ -204,7 +203,7 @@ void Menu::onButton(Button button, Callback callback) {
 
 void Menu::onButtonUp() {
   if (_isSliding) return;
-  _nextOption = static_cast<MENU_OPTION>((_currentOption + 1) % MENU_OPTION_COUNT);
+  _nextOption = static_cast<MenuOption>((_currentOption + 1) % MENU_OPTION_COUNT);
   _slideDirection = UP;
   _slideOffset = 0;
   _isSliding = true;
@@ -212,7 +211,7 @@ void Menu::onButtonUp() {
 
 void Menu::onButtonDown() {
   if (_isSliding) return;
-  _nextOption = static_cast<MENU_OPTION>((_currentOption + MENU_OPTION_COUNT - 1) % MENU_OPTION_COUNT);
+  _nextOption = static_cast<MenuOption>((_currentOption + MENU_OPTION_COUNT - 1) % MENU_OPTION_COUNT);
   _slideDirection = DOWN;
   _slideOffset = 0;
   _isSliding = true;

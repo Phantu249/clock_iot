@@ -41,11 +41,12 @@ ButtonInfo buttonInfos[] = {
   { BUTTON_LEFT, 0 },
   { BUTTON_RIGHT, 0 }
 };
+
 const int numButtons = sizeof(buttonInfos) / sizeof(buttonInfos[0]);
 const unsigned long debounceDelay = 200;  // Độ trễ debounce (ms)
 
 // Hàm ISR chung cho các nút
-void IRAM_ATTR button_isr_handler(void *arg) {
+void IRAM_ATTR buttonISRHandler(void *arg) {
   ButtonInfo *btnInfo = (ButtonInfo *)arg;
   unsigned long currentTime = millis();
 
@@ -67,7 +68,6 @@ class CustomBLECharacteristicCallbacks : public NimBLECharacteristicCallbacks {
 public:
   void onWrite(NimBLECharacteristic *pCharacteristic, NimBLEConnInfo &connInfo) override {
     std::string value = pCharacteristic->getValue();
-
     NimBLEUUID uuid = pCharacteristic->getUUID();
 
     if (uuid.equals(NimBLEUUID(CUSTOM_SCREEN_CHARACTERISTIC_UUID))) {
@@ -77,19 +77,19 @@ public:
       timeBLEHandler(value);
 
     } else if (uuid.equals(NimBLEUUID(ALARM_CHARACTERISTIC_UUID))) {
-      Serial.println("Received ALARM characteristic");
+      alarmBLEHandler(value);
 
     } else if (uuid.equals(NimBLEUUID(BUTTON_CHARACTERISTIC_UUID))) {
       buttonBLEHandler(value);
 
     } else if (uuid.equals(NimBLEUUID(WIFI_CHARACTERISTIC_UUID))) {
-      wifiBLEHandler(value);
+      wifiBLEHandler(value, pCharacteristic);
 
     } else if (uuid.equals(NimBLEUUID(TIMEMODE_CHARACTERISTIC_UUID))) {
       timeModeBLEHandler(value);
 
     } else {
-      Serial.println("Unknown characteristic UUID");
+      Serial.println("\n[ERROR]: Unknown characteristic UUID");
     }
 
     pCharacteristic->setValue("");
@@ -97,129 +97,154 @@ public:
 };
 
 void customScreenBLEHandler(std::string value) {
-  Serial.printf("\n Receive custom");
+  Serial.printf("\n[INFO]: Receive custom screen data: %s", value.c_str());
+
   if (value.length() != 256) {
-    Serial.println("Invalid length for LED data");
+    Serial.println("\n[ERROR]: Invalid length for LED data");
     return;
   }
-  preferences.begin("custom_screen", false);  // false = read/write
+
+  preferences.begin("custom_screen", false);
 
   uint8_t totalFrame = preferences.getUChar("total_frame", 0);
-
-  uint8_t newTotalFrame = totalFrame + 1;
-  Serial.printf("\n New total frame in Flash: %d", newTotalFrame);
-
   if (totalFrame >= MAX_FRAME) {
-    Serial.printf("\n Delete old frame");
+    Serial.printf("\n[INFO]: Clear old frames and start new set of frames");
+
     preferences.clear();
     preferences.putUChar("total_frame", 1);
-  } else preferences.putUChar("total_frame", newTotalFrame);
+    totalFrame = 1;
+  } else {
+    totalFrame += 1;
 
-  uint8_t num = totalFrame % uint8_t(MAX_FRAME);
-  String name = "frame_" + String(num);
-  Serial.printf("\n Add frame %s", name);
+    Serial.printf("\n[INFO]: New total frames in flash: %d", totalFrame);
+    preferences.putUChar("total_frame", totalFrame);
+  }
+
+  Serial.printf("\n[INFO]: Add frame %s", totalFrame);
+
+  String name = "frame_" + String(totalFrame);
   preferences.putBytes(name.c_str(), value.data(), value.length());
 
   preferences.end();
 }
 
 void timeBLEHandler(std::string value) {
-  memcpy(&timestamp, value.data(), sizeof(uint32_t));
-  Serial.printf("Timestamp: %d ", timestamp);
+  Serial.printf("\n[INFO]: Receive set timestamp message with value %s", value.c_str());
+
+  timestamp = atoi(value.c_str());
+  
+  Serial.printf("\n[INFO]: Timestamp: %d ", timestamp);
 }
 
 void timeModeBLEHandler(std::string value) {
-  if (value.length() < 1) return;
-  Serial.printf("\n Set time mode to %s", value.c_str());
+  Serial.printf("\n[INFO]: Receive set time mode message with value %s", value.c_str());
+
   timeMode = static_cast<TimeMode>(atoi(value.c_str()));
 
-  preferences.begin("app", false);  // false = read/write
-  preferences.putUChar("TIMEMODE", timeMode);
+  preferences.begin("app", false);  
+  preferences.putUChar("time_mode", timeMode);
   preferences.end();
 
   switch (timeMode) {
     case TimeMode::AUTO:
       getTime();
       break;
-    case TimeMode::MANUAL:
-      break;
-    default:
-      return;
+    case TimeMode::MANUAL: break;
   }
 }
 
 void alarmBLEHandler(std::string value) {
+  Serial.printf("\n[INFO]: Receive set alarm message with value %s", value.c_str());
 }
 
-void wifiBLEHandler(std::string value) {
-  // Chuyển std::string sang String
+void wifiBLEHandler(std::string value, NimBLECharacteristic *pCharacteristic) {
+  Serial.printf("\n[INFO]: Receive set WiFi message with value %s", value.c_str());
+
   String jsonString = String(value.c_str());
 
-  // Khởi tạo bộ phân tích JSON
   StaticJsonDocument<256> doc;
   DeserializationError error = deserializeJson(doc, jsonString);
 
   if (error) {
-    Serial.print("Lỗi phân tích JSON: ");
-    Serial.println(error.c_str());
+    Serial.printf("\n[ERROR]: Invalid JSON %s", error.c_str());
     return;
   }
 
-  // Lấy ssid và password từ JSON
   const char *newSsid = doc["ssid"];
   const char *newPassword = doc["password"];
 
-  Serial.println("SSID: " + String(newSsid));
-  Serial.println("Password: " + String(newPassword));
+  Serial.printf("\n[INFO]: Extracted SSID: %s, Password: %s", newSsid, newPassword);
+  Serial.printf("\n[INFO]: Try to connect to WiFi %s", newSsid);
 
-  // Lưu vào Preferences
-  preferences.begin("app", false);  // false = read/write
-  preferences.putString("SSID", newSsid);
-  preferences.putString("PASSWORD", newPassword);
+  WiFi.begin(ssid.c_str(), password.c_str());
+
+  uint32_t start = millis();
+  while (WiFi.status() != WL_CONNECTED) {
+    if (millis() - start > WIFI_TIMEOUT_MS) {
+      Serial.println("\n[ERROR]: Cannot connect to WiFi - notify error");
+      // "1" means error, kinda lazy to introduce new macro
+      pCharacteristic->setValue("1");
+      pCharacteristic->notify();
+
+      return;
+    }
+
+    delay(500);
+    Serial.print(".");
+  }
+
+  preferences.begin("app", false);  
+  preferences.putString("ssid", newSsid);
+  preferences.putString("password", newPassword);
   preferences.end();
 
+  // Update global variables
   ssid = String(newSsid);
   password = String(newPassword);
+      
+  // "0" means success, kinda lazy to introduce new macro too :D
+  pCharacteristic->setValue("0");
+  pCharacteristic->notify();
 
-  Serial.println("Đã lưu ssid và password vào Preferences!");
+  Serial.print("\n[INFO]: Successfully to update new WiFi!");
 }
 
 void buttonBLEHandler(std::string value) {
-  if (value.length() < 1) {
-    Serial.println("Invalid button data");
-    return;
-  }
+  Serial.printf("\n[INFO]: Receive button pressed message with value %s", value.c_str());
+
   uint8_t buttonId = value[0];
   Button btn = static_cast<Button>(buttonId);
+
   if (xQueueSend(buttonQueue, &btn, 0) == pdTRUE) {
-    Serial.printf("Button %d enqueued.\n", btn);
+    Serial.printf("\n[INFO]: Button %d enqueued", btn);
   } else {
-    Serial.println("Queue full, button dropped.");
+    Serial.print("\n[INFO]: Queue full, button dropped");
   }
 }
 
 void getTime() {
   WiFi.begin(ssid.c_str(), password.c_str());
-  Serial.printf("Try to connecting WiFi %s \n", ssid.c_str());
+  Serial.printf("\n[INFO]: Try to connecting WiFi %s to sync time", ssid.c_str());
 
   uint32_t start = millis();
   while (WiFi.status() != WL_CONNECTED) {
     if (millis() - start > WIFI_TIMEOUT_MS) {
-      Serial.println("\nWiFi timed out – skipping NTP sync");
+      // figure out a way to notify for user that wifi is wrong or cannot connect.
+      Serial.println("\n[ERROR]: WiFi timed out – skipping NTP sync");
       return;
     }
     delay(500);
     Serial.print(".");
   }
 
-  Serial.println("\nWiFi connected");
+  Serial.println("\n[INFO]: WiFi connected, ready to sync time");
 
   int32_t gmtOffsetSec = offset * 3600;
   configTime(gmtOffsetSec, 0, ntpServer);
 
   struct tm timeinfo;
   if (!getLocalTime(&timeinfo)) {
-    Serial.println("Failed to get NTP time – leaving timestamp as is");
+    Serial.println("\n[ERROR]: Failed to get NTP time – leaving timestamp as is");
     WiFi.disconnect(true);
     WiFi.mode(WIFI_OFF);
     return;
@@ -227,8 +252,7 @@ void getTime() {
 
   timestamp = mktime(&timeinfo);
   lastUpdate = millis();
-  Serial.print("NTP sync timestamp: ");
-  Serial.println(timestamp);
+  Serial.printf("\n[INFO]: NTP sync timestamp: %d", timestamp);
 
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
@@ -238,11 +262,11 @@ void setup() {
   Serial.begin(9600);
 
   preferences.begin("app", true);  //read only
-  ssid = preferences.getString("SSID", "YOUR-SSID");
-  password = preferences.getString("PASSWORD", "YOUR-PASSWORD");
+  ssid = preferences.getString("ssid", "YOUR-SSID");
+  password = preferences.getString("password", "YOUR-PASSWORD");
   timeMode = static_cast<TimeMode>(preferences.getUChar("TIMEMODE", TimeMode::MANUAL));
 
-  Serial.printf("System run at %s mode \n", timeMode == TimeMode::AUTO ? "AUTO" : "MANUAL");
+  Serial.printf("\n[INFO]: System run at %s mode", timeMode == TimeMode::AUTO ? "AUTO" : "MANUAL");
 
   if (timeMode == TimeMode::AUTO) getTime();
 
@@ -261,7 +285,7 @@ void setup() {
   // Cấu hình các nút (attach Interrupt)
   for (int i = 0; i < numButtons; i++) {
     pinMode(buttonInfos[i].pin, INPUT_PULLUP);
-    attachInterruptArg(digitalPinToInterrupt(buttonInfos[i].pin), button_isr_handler, &buttonInfos[i], FALLING);
+    attachInterruptArg(digitalPinToInterrupt(buttonInfos[i].pin), buttonISRHandler, &buttonInfos[i], FALLING);
   }
 
   //Task create
