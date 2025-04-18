@@ -12,16 +12,21 @@
 
 class CustomScreen : public Screen {
 protected:
-  uint8_t* frames[NUM_LEDS];
+  uint8_t frames[MAX_FRAME][NUM_LEDS];
   uint8_t currentFrame = 0;
   uint8_t totalFrame = 0;
   Preferences preferences;
+  bool isGif = false;
 
 public:
   CustomScreen();
   CRGB* draw() override;
   void renderFrame();
   int getIndex(uint8_t x, uint8_t y);
+  void onButton(Button button, Callback callback);
+  void onButtonUp();
+  void onButtonDown();
+  void onButtonRight();
 };
 
 #endif

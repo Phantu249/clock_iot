@@ -26,7 +26,6 @@ State appState;             // A current state of the app
 QueueHandle_t frameQueue;   // A queue receive a frame (an array to show)
 QueueHandle_t buttonQueue;  // A queue revice a button
 Ble *bleScreen;             // A BLE screen init default by app
-// uint8_t dataArray[256];
 TimeMode timeMode;
 
 // Cấu trúc lưu thông tin debounce cho mỗi nút
@@ -98,19 +97,23 @@ public:
 };
 
 void customScreenBLEHandler(std::string value) {
+  Serial.printf("\n Receive custom");
   if (value.length() != 256) {
     Serial.println("Invalid length for LED data");
     return;
   }
   preferences.begin("custom_screen", false);  // false = read/write
+
   uint8_t totalFrame = preferences.getUChar("total_frame", 0);
-  String name = "frame_" + (totalFrame) % MAX_FRAME;
+  Serial.printf("\n Total frame in Flash: %d", totalFrame);
+  uint8_t num = totalFrame % uint8_t(MAX_FRAME);
+  String name = "frame_" + String(num);
+  Serial.printf("\n Add frame %s", name);
   preferences.putBytes(name.c_str(), value.data(), value.length());
-  preferences.putUChar("total_frame", (totalFrame + 1) % MAX_FRAME);
+  uint8_t newTotalFrame = (totalFrame + 1) % uint8_t(MAX_FRAME);
+  preferences.putUChar("total_frame", newTotalFrame);
 
   preferences.end();
-  // memcpy(dataArray, value.data(), 256);
-  // renderCustom();
 }
 
 void timeBLEHandler(std::string value) {
@@ -120,6 +123,7 @@ void timeBLEHandler(std::string value) {
 
 void timeModeBLEHandler(std::string value) {
   if (value.length() < 1) return;
+  Serial.printf("\n Set time mode to %s", value.c_str());
   timeMode = static_cast<TimeMode>(atoi(value.c_str()));
 
   preferences.begin("app", false);  // false = read/write
@@ -155,17 +159,20 @@ void wifiBLEHandler(std::string value) {
   }
 
   // Lấy ssid và password từ JSON
-  const char *ssid = doc["ssid"];
-  const char *password = doc["password"];
+  const char *newSsid = doc["ssid"];
+  const char *newPassword = doc["password"];
 
-  Serial.println("SSID: " + String(ssid));
-  Serial.println("Password: " + String(password));
+  Serial.println("SSID: " + String(newSsid));
+  Serial.println("Password: " + String(newPassword));
 
   // Lưu vào Preferences
   preferences.begin("app", false);  // false = read/write
-  preferences.putString("SSID", ssid);
-  preferences.putString("PASSWORD", password);
+  preferences.putString("SSID", newSsid);
+  preferences.putString("PASSWORD", newPassword);
   preferences.end();
+
+  ssid = String(newSsid);
+  password = String(newPassword);
 
   Serial.println("Đã lưu ssid và password vào Preferences!");
 }
@@ -186,7 +193,7 @@ void buttonBLEHandler(std::string value) {
 
 void getTime() {
   WiFi.begin(ssid.c_str(), password.c_str());
-  Serial.print("Connecting WiFi");
+  Serial.printf("Try to connecting WiFi %s \n", ssid.c_str());
 
   uint32_t start = millis();
   while (WiFi.status() != WL_CONNECTED) {
@@ -220,29 +227,6 @@ void getTime() {
   WiFi.mode(WIFI_OFF);
 }
 
-// // getIndex func for convert x,y index from 2D array to 1D CRGB array use for FastLED
-// int getIndex(uint8_t x, uint8_t y) {
-//   uint8_t physicalY = NUM_ROWS - 1 - y;
-//   if (physicalY % 2 == 0) {
-//     return physicalY * NUM_COLS + x;
-//   } else {
-//     return physicalY * NUM_COLS + (NUM_COLS - 1 - x);
-//   }
-// }
-
-
-// void renderCustom() {
-//   for (int y = 0; y < NUM_ROWS; y++) {
-//     for (int x = 0; x < NUM_COLS; x++) {
-//       int index = getIndex(x, y);
-//       int pixelIndex = y * NUM_COLS + x;
-//       uint8_t colorIndex = dataArray[pixelIndex];
-//       frame[index] = colors[colorIndex];
-//     }
-//   }
-//   FastLED.show();
-// }
-
 void setup() {
   Serial.begin(9600);
 
@@ -250,6 +234,8 @@ void setup() {
   ssid = preferences.getString("SSID", "YOUR-SSID");
   password = preferences.getString("PASSWORD", "YOUR-PASSWORD");
   timeMode = static_cast<TimeMode>(preferences.getUChar("TIMEMODE", TimeMode::MANUAL));
+
+  Serial.printf("System run at %s mode \n", timeMode == TimeMode::AUTO ? "AUTO" : "MANUAL");
 
   if (timeMode == TimeMode::AUTO) getTime();
 
@@ -318,18 +304,18 @@ void controllerTask(void *param) {
         case CUSTOM:
           switch (btn) {
             case BUTTON_LEFT:
-              break;
-            case BUTTON_RIGHT:
-              break;
-            case BUTTON_DOWN:
-            case BUTTON_UP:
               delete screen;
               screen = new Clock(timestamp, offset);
               appState = CLOCK;
               break;
+            case BUTTON_RIGHT:
+            case BUTTON_DOWN:
+            case BUTTON_UP:
+              screen->onButton(btn);
+              break;
           }
-          break; 
-        case GAME: 
+          break;
+        case GAME:
           break;
         case BLE:
           switch (btn) {
@@ -372,7 +358,7 @@ void uiTask(void *param) {
   while (1) {
     if (screen != NULL) {
       CRGB *src = screen->draw();
-      if (xQueueSend(frameQueue, &src, 0) != pdTRUE) {
+      if (src != NULL && xQueueSend(frameQueue, &src, 0) != pdTRUE) {
         Serial.println("Warning: Frame queue full, frame dropped");
       }
       vTaskDelay(pdMS_TO_TICKS(1000 / screen->getFrame()));
