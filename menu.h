@@ -20,8 +20,10 @@ protected:
   MENU_OPTION _currentOption;
   MENU_OPTION _nextOption;
   bool _isSliding;
-  int _slideOffset;
+  float _slideOffset;
   SLIDE_DIRECTION _slideDirection;
+  unsigned long lastUpdate = 0; // Thời gian lần gọi cuối (ms)
+  const float slideSpeed = 30.0f; // Tốc độ trượt: 16 pixel/giây (tùy chỉnh)
 
 public:
   Menu();

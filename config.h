@@ -11,6 +11,11 @@
 #define BRIGHTNESS 5
 
 typedef enum : uint8_t {
+  MANUAL,
+  AUTO
+} TimeMode;
+
+typedef enum : uint8_t {
   CLOCK,
   MENU,
   GAME,
