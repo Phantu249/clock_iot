@@ -7,6 +7,7 @@
 #include <WiFi.h>
 #include <Preferences.h>
 #include <ArduinoJson.h>
+#include "custom_screen.h"
 
 String ssid;
 String password;
@@ -25,7 +26,7 @@ State appState;             // A current state of the app
 QueueHandle_t frameQueue;   // A queue receive a frame (an array to show)
 QueueHandle_t buttonQueue;  // A queue revice a button
 Ble *bleScreen;             // A BLE screen init default by app
-uint8_t dataArray[256];
+// uint8_t dataArray[256];
 TimeMode timeMode;
 
 // Cấu trúc lưu thông tin debounce cho mỗi nút
@@ -101,8 +102,15 @@ void customScreenBLEHandler(std::string value) {
     Serial.println("Invalid length for LED data");
     return;
   }
-  memcpy(dataArray, value.data(), 256);
-  renderCustom();
+  preferences.begin("custom_screen", false);  // false = read/write
+  uint8_t totalFrame = preferences.getUChar("total_frame", 0);
+  String name = "frame_" + (totalFrame) % MAX_FRAME;
+  preferences.putBytes(name.c_str(), value.data(), value.length());
+  preferences.putUChar("total_frame", (totalFrame + 1) % MAX_FRAME);
+
+  preferences.end();
+  // memcpy(dataArray, value.data(), 256);
+  // renderCustom();
 }
 
 void timeBLEHandler(std::string value) {
@@ -115,7 +123,7 @@ void timeModeBLEHandler(std::string value) {
   timeMode = static_cast<TimeMode>(atoi(value.c_str()));
 
   preferences.begin("app", false);  // false = read/write
-  preferences.putUShort("TIMEMODE", timeMode);
+  preferences.putUChar("TIMEMODE", timeMode);
   preferences.end();
 
   switch (timeMode) {
@@ -212,28 +220,28 @@ void getTime() {
   WiFi.mode(WIFI_OFF);
 }
 
-// getIndex func for convert x,y index from 2D array to 1D CRGB array use for FastLED
-int getIndex(uint8_t x, uint8_t y) {
-  uint8_t physicalY = NUM_ROWS - 1 - y;
-  if (physicalY % 2 == 0) {
-    return physicalY * NUM_COLS + x;
-  } else {
-    return physicalY * NUM_COLS + (NUM_COLS - 1 - x);
-  }
-}
+// // getIndex func for convert x,y index from 2D array to 1D CRGB array use for FastLED
+// int getIndex(uint8_t x, uint8_t y) {
+//   uint8_t physicalY = NUM_ROWS - 1 - y;
+//   if (physicalY % 2 == 0) {
+//     return physicalY * NUM_COLS + x;
+//   } else {
+//     return physicalY * NUM_COLS + (NUM_COLS - 1 - x);
+//   }
+// }
 
 
-void renderCustom() {
-  for (int y = 0; y < NUM_ROWS; y++) {
-    for (int x = 0; x < NUM_COLS; x++) {
-      int index = getIndex(x, y);
-      int pixelIndex = y * NUM_COLS + x;
-      uint8_t colorIndex = dataArray[pixelIndex];
-      frame[index] = colors[colorIndex];
-    }
-  }
-  FastLED.show();
-}
+// void renderCustom() {
+//   for (int y = 0; y < NUM_ROWS; y++) {
+//     for (int x = 0; x < NUM_COLS; x++) {
+//       int index = getIndex(x, y);
+//       int pixelIndex = y * NUM_COLS + x;
+//       uint8_t colorIndex = dataArray[pixelIndex];
+//       frame[index] = colors[colorIndex];
+//     }
+//   }
+//   FastLED.show();
+// }
 
 void setup() {
   Serial.begin(9600);
@@ -241,7 +249,7 @@ void setup() {
   preferences.begin("app", true);  //read only
   ssid = preferences.getString("SSID", "YOUR-SSID");
   password = preferences.getString("PASSWORD", "YOUR-PASSWORD");
-  timeMode = static_cast<TimeMode>(preferences.getUShort("TIMEMODE", TimeMode::MANUAL));
+  timeMode = static_cast<TimeMode>(preferences.getUChar("TIMEMODE", TimeMode::MANUAL));
 
   if (timeMode == TimeMode::AUTO) getTime();
 
@@ -287,6 +295,9 @@ void controllerTask(void *param) {
               break;
             case BUTTON_DOWN:
             case BUTTON_UP:
+              delete screen;
+              screen = new CustomScreen();
+              appState = CUSTOM;
               break;
           }
           break;
@@ -304,7 +315,21 @@ void controllerTask(void *param) {
               break;
           }
           break;
-        case GAME:
+        case CUSTOM:
+          switch (btn) {
+            case BUTTON_LEFT:
+              break;
+            case BUTTON_RIGHT:
+              break;
+            case BUTTON_DOWN:
+            case BUTTON_UP:
+              delete screen;
+              screen = new Clock(timestamp, offset);
+              appState = CLOCK;
+              break;
+          }
+          break; 
+        case GAME: 
           break;
         case BLE:
           switch (btn) {

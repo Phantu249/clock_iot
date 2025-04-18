@@ -10,6 +10,10 @@
 #define LED_TYPE NEOPIXEL            // Loại LED
 #define BRIGHTNESS 5
 
+#ifndef MAX_FRAME
+#define MAX_FRAME 5
+#endif
+
 typedef enum : uint8_t {
   MANUAL,
   AUTO
