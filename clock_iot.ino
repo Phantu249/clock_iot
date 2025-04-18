@@ -92,33 +92,6 @@ public:
       Serial.println("Unknown characteristic UUID");
     }
 
-    // if (pCharacteristic->getUUID() == NimBLEUUID(CUSTOM_SCREEN_CHARACTERISTIC_UUID)) {
-    //   if (value.length() != 256) {
-    //     Serial.println("Invalid length for LED data");
-    //     return;
-    //   }
-    //   memcpy(dataArray, value.data(), 256);
-    //   renderCustom();
-    // } else if (pCharacteristic->getUUID() == NimBLEUUID(TIME_CHARACTERISTIC_UUID)) {
-    //   uint32_t timestamp;
-    //   memcpy(&timestamp, value.data(), sizeof(uint32_t));
-    //   Serial.printf("Timestamp: %d ", timestamp);
-    // } else if (pCharacteristic->getUUID() == NimBLEUUID(BUTTON_CHARACTERISTIC_UUID)) {
-    //   if (value.length() < 1) {
-    //     Serial.println("Invalid button data");
-    //     return;
-    //   }
-    //   uint8_t buttonId = value[0];
-    //   Button btn = static_cast<Button>(buttonId);
-    //   if (xQueueSend(buttonQueue, &btn, 0) == pdTRUE) {
-    //     Serial.printf("Button %d enqueued.\n", btn);
-    //   } else {
-    //     Serial.println("Queue full, button dropped.");
-    //   }
-    // } else {
-    //   Serial.println("Unknown characteristic UUID");
-    // }
-
     pCharacteristic->setValue("");
   };
 };

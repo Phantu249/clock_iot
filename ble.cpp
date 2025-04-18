@@ -21,7 +21,7 @@ void Ble::onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reas
 Ble::Ble(NimBLECharacteristicCallbacks* onWrite) {
   _frame = 3;  // 100ms per frame
 
-  NimBLEDevice::init("ESP32_Clock");
+  NimBLEDevice::init(BLE_NAME);
   _pServer = NimBLEDevice::createServer();
   _pServer->setCallbacks(this);
 
@@ -56,7 +56,7 @@ Ble::Ble(NimBLECharacteristicCallbacks* onWrite) {
   pAdvertising = NimBLEDevice::getAdvertising();
   pAdvertising->addServiceUUID(SERVICE_UUID);
   pAdvertising->enableScanResponse(true);
-  pAdvertising->setName("Nimble ESP32_Clock");
+  pAdvertising->setName(BLE_NAME);
 
   Serial.println("BLE Initialized");
 }
