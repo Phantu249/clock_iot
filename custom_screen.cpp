@@ -82,9 +82,9 @@ void CustomScreen::renderFrame() {
 
 CRGB* CustomScreen::draw() {
   if (totalFrame < 1) {
-    // Serial.println("No valid frames to draw");
-    // static uint8_t hue = 0;
-    // fill_rainbow(frame, NUM_LEDS, hue++, 5);
+    static uint8_t hue = 0;
+    hue += 3;
+    fill_rainbow(frame, NUM_LEDS, hue, 5);
     return frame;
   }
   renderFrame();
@@ -112,10 +112,12 @@ void CustomScreen::onButton(Button button, Callback callback) {
 
 void CustomScreen::onButtonUp() {
   if (!totalFrame) return;
+  isGif = false;
   currentFrame = (currentFrame + 1) % totalFrame;
 };
 void CustomScreen::onButtonDown() {
   if (!totalFrame) return;
+  isGif = false;
   currentFrame = (currentFrame - 1 + totalFrame) % totalFrame;
 };
 void CustomScreen::onButtonRight() {

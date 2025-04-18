@@ -105,13 +105,20 @@ void customScreenBLEHandler(std::string value) {
   preferences.begin("custom_screen", false);  // false = read/write
 
   uint8_t totalFrame = preferences.getUChar("total_frame", 0);
-  Serial.printf("\n Total frame in Flash: %d", totalFrame);
+
+  uint8_t newTotalFrame = totalFrame + 1;
+  Serial.printf("\n New total frame in Flash: %d", newTotalFrame);
+
+  if (totalFrame >= MAX_FRAME) {
+    Serial.printf("\n Delete old frame");
+    preferences.clear();
+    preferences.putUChar("total_frame", 1);
+  } else preferences.putUChar("total_frame", newTotalFrame);
+
   uint8_t num = totalFrame % uint8_t(MAX_FRAME);
   String name = "frame_" + String(num);
   Serial.printf("\n Add frame %s", name);
   preferences.putBytes(name.c_str(), value.data(), value.length());
-  uint8_t newTotalFrame = (totalFrame + 1) % uint8_t(MAX_FRAME);
-  preferences.putUChar("total_frame", newTotalFrame);
 
   preferences.end();
 }
