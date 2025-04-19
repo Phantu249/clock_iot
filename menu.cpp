@@ -1,7 +1,7 @@
 #include "menu.h"
 #include "ble.h"
 #include "config.h"
-
+#include "snake.h"
 // Frame 16x16 cho TIME_SETTING (256 bytes, 1 byte/pixel)
 const uint8_t timeSettingFrame[] PROGMEM = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
