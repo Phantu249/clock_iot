@@ -521,6 +521,8 @@ void callback(void *s, State newState) {
   screen = s ? static_cast<Screen *>(s) : bleScreen;
   appState = newState;
 
+  Serial.printf("\n[INFO]: State: %d", appState);
+
   // change state to Ble -> start advertising ble
   if (newState == BLE) {
     bleScreen->startAdvertising();
