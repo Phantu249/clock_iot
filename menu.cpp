@@ -189,12 +189,8 @@ void Menu::onButton(Button button, Callback callback) {
     case BUTTON_DOWN:
       onButtonDown();
       break;
-    case BUTTON_LEFT:
-      onButtonLeft();
-      break;
-    case BUTTON_RIGHT:
-      if (callback) onButtonRight(callback);
-      else onButtonRight();
+    case BUTTON_MENU:
+      if (callback) onButtonMenu(callback);
       break;
     default:
       return;
@@ -217,11 +213,7 @@ void Menu::onButtonDown() {
   _isSliding = true;
 }
 
-void Menu::onButtonLeft() {}
-
-void Menu::onButtonRight() {}
-
-void Menu::onButtonRight(Callback callback) {
+void Menu::onButtonMenu(Callback callback) {
   State newState;
   if (callback) {
     Screen* s = NULL;

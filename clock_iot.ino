@@ -31,12 +31,14 @@ Ble *bleScreen;             // A BLE screen init default by app
 TimeMode timeMode;
 Alarm alarms[5];  // Only 5 alarms now
 
-  // Mảng thông tin debounce cho các nút
+// Mảng thông tin debounce cho các nút
 ButtonInfo buttonInfos[] = {
-    { BUTTON_UP, 0 },
-    { BUTTON_DOWN, 0 },
-    { BUTTON_LEFT, 0 },
-    { BUTTON_RIGHT, 0 }
+{ BUTTON_UP, 0 },
+{ BUTTON_DOWN, 0 },
+{ BUTTON_LEFT, 0 },
+{ BUTTON_RIGHT, 0 },
+  { BUTTON_BACK, 0 },
+  { BUTTON_MENU, 0 }
 };
 
 const int numButtons = sizeof(buttonInfos) / sizeof(buttonInfos[0]);
@@ -54,6 +56,8 @@ void IRAM_ATTR buttonISRHandler(void *arg) {
     else if (btnInfo->pin == BUTTON_DOWN) btn = BUTTON_DOWN;
     else if (btnInfo->pin == BUTTON_LEFT) btn = BUTTON_LEFT;
     else if (btnInfo->pin == BUTTON_RIGHT) btn = BUTTON_RIGHT;
+    else if (btnInfo->pin == BUTTON_BACK) btn = BUTTON_BACK;
+    else if (btnInfo->pin == BUTTON_MENU) btn = BUTTON_MENU;
 
     xQueueSendFromISR(buttonQueue, &btn, NULL);
     btnInfo->lastDebounceTime = currentTime;
@@ -189,11 +193,11 @@ void alarmBLEHandler(std::string value) {
 
   char *payload[5] = { nullptr };
   int payloadLength;
-  
+
   for (int i = 0; i < 5; i++) {
     alarms[i] = {-1, -1};
   }
-  
+
   char* value_cstr = strdup(value.c_str());
   char *token = strtok(value_cstr, &DELIMITER);
 
@@ -410,12 +414,15 @@ void controllerTask(void *param) {
       switch (appState) {
         case CLOCK:
           switch (btn) {
-            case BUTTON_LEFT:
+            case BUTTON_BACK:
               break;
-            case BUTTON_RIGHT:
+            case BUTTON_MENU:
               delete screen;
               screen = new Menu();
               appState = MENU;
+              break;
+            case BUTTON_LEFT:
+            case BUTTON_RIGHT:
               break;
             case BUTTON_DOWN:
             case BUTTON_UP:
@@ -427,11 +434,13 @@ void controllerTask(void *param) {
           break;
         case MENU:
           switch (btn) {
-            case BUTTON_LEFT:
+            case BUTTON_BACK:
               delete screen;
               screen = new Clock(timestamp, offset);
               appState = CLOCK;
               break;
+            case BUTTON_MENU:
+            case BUTTON_LEFT:
             case BUTTON_RIGHT:
             case BUTTON_DOWN:
             case BUTTON_UP:
@@ -441,11 +450,13 @@ void controllerTask(void *param) {
           break;
         case CUSTOM:
           switch (btn) {
-            case BUTTON_LEFT:
+            case BUTTON_BACK:
               delete screen;
               screen = new Clock(timestamp, offset);
               appState = CLOCK;
               break;
+            case BUTTON_MENU:
+            case BUTTON_LEFT:
             case BUTTON_RIGHT:
             case BUTTON_DOWN:
             case BUTTON_UP:
@@ -457,11 +468,13 @@ void controllerTask(void *param) {
           break;
         case BLE:
           switch (btn) {
-            case BUTTON_LEFT:
+            case BUTTON_BACK:
               screen = new Menu();
               appState = MENU;
               bleScreen->stopAdvertising();
               break;
+            case BUTTON_MENU:
+            case BUTTON_LEFT:
             case BUTTON_RIGHT:
             case BUTTON_DOWN:
             case BUTTON_UP:
@@ -546,12 +559,12 @@ void intervalTimeUpdater(void *param) {
         continue;
       }
 
-      if (alarms[i].hour == hour && 
-          alarms[i].minute == minute && 
+      if (alarms[i].hour == hour &&
+          alarms[i].minute == minute &&
           !alarmTriggered[i]) {
         ring(); // Call the ring function
         alarmTriggered[i] = true; // Mark alarm as triggered
-        Serial.printf("\n[INFO]: Alarm %d triggered at %02d:%02d", 
+        Serial.printf("\n[INFO]: Alarm %d triggered at %02d:%02d",
                       i + 1, alarms[i].hour, alarms[i].minute);
       } else if (alarms[i].hour != hour || alarms[i].minute != minute) {
         alarmTriggered[i] = false; // Reset trigger state when time no longer matches

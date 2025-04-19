@@ -32,9 +32,7 @@ public:
   void onButton(Button button, Callback callback = NULL) override;
   void onButtonUp() override;
   void onButtonDown() override;
-  void onButtonLeft() override;
-  void onButtonRight() override;
-  void onButtonRight(Callback callback);
+  void onButtonMenu(Callback callback);
   int getIndex(uint8_t x, uint8_t y);
 };
 

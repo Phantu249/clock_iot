@@ -26,7 +26,7 @@ public:
   void onButton(Button button, Callback callback);
   void onButtonUp();
   void onButtonDown();
-  void onButtonRight();
+  void onButtonMenu();
 };
 
 #endif
