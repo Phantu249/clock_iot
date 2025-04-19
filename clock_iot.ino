@@ -33,10 +33,10 @@ Alarm alarms[5];  // Only 5 alarms now
 
 // Mảng thông tin debounce cho các nút
 ButtonInfo buttonInfos[] = {
-{ BUTTON_UP, 0 },
-{ BUTTON_DOWN, 0 },
-{ BUTTON_LEFT, 0 },
-{ BUTTON_RIGHT, 0 },
+  { BUTTON_UP, 0 },
+  { BUTTON_DOWN, 0 },
+  { BUTTON_LEFT, 0 },
+  { BUTTON_RIGHT, 0 },
   { BUTTON_BACK, 0 },
   { BUTTON_MENU, 0 }
 };
@@ -195,10 +195,10 @@ void alarmBLEHandler(std::string value) {
   int payloadLength;
 
   for (int i = 0; i < 5; i++) {
-    alarms[i] = {-1, -1};
+    alarms[i] = { -1, -1 };
   }
 
-  char* value_cstr = strdup(value.c_str());
+  char *value_cstr = strdup(value.c_str());
   char *token = strtok(value_cstr, &DELIMITER);
 
   for (payloadLength = 0; token != nullptr && payloadLength < 5; payloadLength += 1) {
@@ -532,7 +532,7 @@ void drawTask(void *param) {
 }
 
 void intervalTimeUpdater(void *param) {
-  static bool alarmTriggered[5] = {false}; // Track which alarms have triggered to avoid repeated calls
+  static bool alarmTriggered[5] = { false };  // Track which alarms have triggered to avoid repeated calls
 
   for (;;) {
     uint32_t currentMillis = millis();
@@ -555,19 +555,17 @@ void intervalTimeUpdater(void *param) {
 
     for (int i = 0; i < 5; i += 1) {
       if (alarms[i].hour == -1 && alarms[i].minute == -1) {
-        alarmTriggered[i] = false; // Reset trigger state for unset alarms
+        alarmTriggered[i] = false;  // Reset trigger state for unset alarms
         continue;
       }
 
-      if (alarms[i].hour == hour &&
-          alarms[i].minute == minute &&
-          !alarmTriggered[i]) {
-        ring(); // Call the ring function
-        alarmTriggered[i] = true; // Mark alarm as triggered
+      if (alarms[i].hour == hour && alarms[i].minute == minute && !alarmTriggered[i]) {
+        ring();                    // Call the ring function
+        alarmTriggered[i] = true;  // Mark alarm as triggered
         Serial.printf("\n[INFO]: Alarm %d triggered at %02d:%02d",
                       i + 1, alarms[i].hour, alarms[i].minute);
       } else if (alarms[i].hour != hour || alarms[i].minute != minute) {
-        alarmTriggered[i] = false; // Reset trigger state when time no longer matches
+        alarmTriggered[i] = false;  // Reset trigger state when time no longer matches
       }
     }
 
