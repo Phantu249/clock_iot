@@ -33,7 +33,7 @@ class SnakeGame : public Screen {
   public:
     SnakeGame();
     CRGB* draw() override;
-    void onButton(Button button) override;
+    void onButton(Button button, Callback callback = NULL) override;
     void onButtonUp() override;
     void onButtonDown() override;
     void onButtonLeft() override;
