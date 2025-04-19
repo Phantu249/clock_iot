@@ -15,10 +15,11 @@ SnakeGame::SnakeGame() {
 
 // 👉 Mapping kiểu zigzag
 uint16_t SnakeGame::getIndex(uint8_t x, uint8_t y) {
-  if (y % 2 == 0) {
-    return y * WIDTH + x; // dòng chẵn: bình thường
+  uint8_t physicalY = HEIGHT - 1 - y;  // y=0 -> physicalY=15, y=15 -> physicalY=0
+  if (physicalY % 2 == 0) {
+    return physicalY * WIDTH + x;  // Hàng chẵn: x tăng (trái -> phải)
   } else {
-    return y * WIDTH + (WIDTH - 1 - x); // dòng lẻ: ngược lại
+    return physicalY * WIDTH + (WIDTH - 1 - x);  // Hàng lẻ: x giảm (phải -> trái)
   }
 }
 
@@ -81,7 +82,7 @@ CRGB* SnakeGame::draw() {
   return leds;
 }
 
-void SnakeGame::onButton(Button button) {
+void SnakeGame::onButton(Button button, Callback _c) {
   switch (button) {
     case BUTTON_UP:    onButtonUp(); break;
     case BUTTON_DOWN:  onButtonDown(); break;
