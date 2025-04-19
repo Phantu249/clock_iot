@@ -466,6 +466,29 @@ void controllerTask(void *param) {
           }
           break;
         case GAME:
+          switch (btn) {
+            case BUTTON_BACK:
+              delete screen;
+              screen = new Clock(timestamp, offset);
+              appState = CLOCK;
+              break;
+            case BUTTON_MENU:
+            case BUTTON_LEFT:
+            case BUTTON_RIGHT:
+            case BUTTON_DOWN:
+            case BUTTON_UP:
+              screen->onButton(btn);
+              break;
+          }
+
+          // Kiểm tra nếu game over (phải cast screen về SnakeGame)
+          if (SnakeGame* snakeGame = static_cast<SnakeGame*>(screen)) {
+            if (snakeGame->isGameOver() && snakeGame->gameOverEffectDone && millis() - snakeGame->gameOverTime > 2000) {
+              delete screen;
+              screen = new Clock(timestamp, offset);
+              appState = CLOCK;
+            }
+          }
           break;
         case BLE:
           switch (btn) {

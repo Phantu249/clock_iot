@@ -24,6 +24,7 @@ class SnakeGame : public Screen {
     uint32_t lastMoveTime;
     uint16_t moveInterval; // milliseconds between moves
     Point food;
+    bool gameOver;
 
     void moveSnake();
     void generateFood();
@@ -39,6 +40,13 @@ class SnakeGame : public Screen {
     void onButtonLeft() override;
     void onButtonRight() override;
     uint8_t getFrame() override;
+
+    bool gameOverEffectDone = false;
+    unsigned long gameOverTime = 0;
+
+    bool isGameOver();
+    void endGame(); // optional nếu muốn dừng từ bên ngoài
+    void drawGameOverText();
 };
 
 #endif
