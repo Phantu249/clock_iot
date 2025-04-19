@@ -3,17 +3,17 @@
 #include <NimBLEDevice.h>
 
 void Ble::onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) {
-  Serial.printf("Client address: %s\n", connInfo.getAddress().toString().c_str());
+  Serial.printf("\n[INFO]: Client address: %s", connInfo.getAddress().toString().c_str());
   isConnected = true;
   NimBLEDevice::getAdvertising()->stop();
 }
 
 void Ble::onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) {
   isConnected = false;
-  Serial.println("Client disconnected");
+  Serial.print("\n[INFO]: Client disconnected");
 
   if (canReAdv) {
-    Serial.println("Start advertising");
+    Serial.print("\n[INFO]: Start advertising");
     NimBLEDevice::startAdvertising();
   }
 }
@@ -58,7 +58,7 @@ Ble::Ble(NimBLECharacteristicCallbacks* onWrite) {
   pAdvertising->enableScanResponse(true);
   pAdvertising->setName(BLE_NAME);
 
-  Serial.println("BLE Initialized");
+  Serial.print("\n[INFO]: BLE Initialized");
 }
 
 void Ble::startAdvertising() {
@@ -66,7 +66,7 @@ void Ble::startAdvertising() {
   if (!isAdvertising) {
     NimBLEDevice::startAdvertising();
     isAdvertising = true;
-    Serial.println("Advertising...");
+    Serial.print("\n[INFO]: Advertising...");
   }
 }
 
@@ -75,7 +75,7 @@ void Ble::stopAdvertising() {
   if (isAdvertising) {
     NimBLEDevice::stopAdvertising();
     isAdvertising = false;
-    Serial.println("Stop Advertising");
+    Serial.print("\n[INFO]: Stop Advertising");
   }
 }
 

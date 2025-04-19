@@ -46,4 +46,17 @@ const CRGB colors[16] = {
   CRGB::Silver    // SILVER (15)
 };
 
+
+struct Alarm {
+  int8_t hour;
+  int8_t minute;
+};
+
+// Cấu trúc lưu thông tin debounce cho mỗi nút
+struct ButtonInfo {
+  int pin;
+  volatile unsigned long lastDebounceTime;
+};
+
+const char DELIMITER = ',';
 #endif
