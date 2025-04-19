@@ -227,7 +227,8 @@ void Menu::onButtonMenu(Callback callback) {
         newState = BLE;
         break;
       case GAME1:
-        break;
+        newState = GAME;
+        s = new SnakeGame();
       default:
         return;
     }
