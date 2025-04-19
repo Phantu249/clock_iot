@@ -20,7 +20,8 @@ static const uint32_t WIFI_TIMEOUT_MS = 10000;
 uint32_t timestamp = 0;
 uint64_t lastUpdate = 0;
 int8_t offset = 7;
-char *ntpServer = "pool.ntp.org";
+char* ntpServer = "pool.ntp.org";
+#include "snake.h"
 
 CRGB frame[NUM_LEDS];       // 1D array for FastLED show
 Screen *screen;             // A pointer for main screen
@@ -366,6 +367,7 @@ void getTime() {
 
 void setup() {
   Serial.begin(9600);
+  randomSeed(analogRead(0));
 
   setupRing();
 
