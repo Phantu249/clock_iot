@@ -217,6 +217,7 @@ void Menu::onButtonMenu(Callback callback) {
   State newState;
   if (callback) {
     Screen* s = NULL;
+    Serial.printf("\n[INFO]: _currentOption: %d", _currentOption);
     switch (_currentOption) {
       case TIME_SETTING:
         // s = new TimeSettingScreen(); // Thêm nếu cần
@@ -228,9 +229,11 @@ void Menu::onButtonMenu(Callback callback) {
       case GAME1:
         newState = GAME;
         s = new SnakeGame();
+        break;
       default:
         return;
     }
+    Serial.printf("\n[INFO]: newState: %d", newState);
     if (s && _currentOption != BLUETOOTH_SETTING) callback(s, newState);
     else callback(NULL, newState);
   }

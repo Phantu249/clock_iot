@@ -59,7 +59,7 @@ void SnakeGame::moveSnake() {
 
   snake[0] = newHead;
 
-  for (int i = 0; i < length; ++i) {
+  for (int i = 1; i < length; ++i) { // Sửa lỗi: bắt đầu từ i=1 để bỏ qua đầu rắn
     if (newHead == snake[i]) {
       gameOver = true;
       gameOverTime = millis();
