@@ -13,8 +13,13 @@ SnakeGame::SnakeGame() {
   generateFood();
 }
 
+// 👉 Mapping kiểu zigzag
 uint16_t SnakeGame::getIndex(uint8_t x, uint8_t y) {
-  return y * WIDTH + x;
+  if (y % 2 == 0) {
+    return y * WIDTH + x; // dòng chẵn: bình thường
+  } else {
+    return y * WIDTH + (WIDTH - 1 - x); // dòng lẻ: ngược lại
+  }
 }
 
 bool SnakeGame::isOnSnake(Point p) {
