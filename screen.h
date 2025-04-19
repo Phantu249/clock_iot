@@ -13,7 +13,9 @@ typedef enum : uint8_t {
   BUTTON_UP = 35,
   BUTTON_DOWN = 36,
   BUTTON_LEFT = 37,
-  BUTTON_RIGHT = 38
+  BUTTON_RIGHT = 38,
+  BUTTON_BACK = 39,
+  BUTTON_MENU = 40
 } Button;
 
 typedef void (*Callback)(void*, State newState);
@@ -32,6 +34,8 @@ public:
   virtual void onButtonDown();
   virtual void onButtonLeft();
   virtual void onButtonRight();
+  virtual void onButtonBack();
+  virtual void onButtonMenu();
   virtual uint8_t getFrame() {
     return _frame;
   }
@@ -42,5 +46,7 @@ inline void Screen::onButtonUp() {}
 inline void Screen::onButtonDown() {}
 inline void Screen::onButtonLeft() {}
 inline void Screen::onButtonRight() {}
+inline void Screen::onButtonBack() {}
+inline void Screen::onButtonMenu() {}
 
 #endif

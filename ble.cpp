@@ -2,11 +2,6 @@
 #include "config.h"
 #include <NimBLEDevice.h>
 
-constexpr auto SERVICE_UUID = "AAAA";
-constexpr auto CUSTOM_SCREEN_CHARACTERISTIC_UUID = "1001";
-constexpr auto TIME_CHARACTERISTIC_UUID = "1002";
-constexpr auto BUTTON_CHARACTERISTIC_UUID = "1003";
-
 void Ble::onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) {
   Serial.printf("Client address: %s\n", connInfo.getAddress().toString().c_str());
   isConnected = true;
@@ -24,9 +19,9 @@ void Ble::onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reas
 }
 
 Ble::Ble(NimBLECharacteristicCallbacks* onWrite) {
-  _frame = 5;  // 100ms per frame
+  _frame = 3;  // 100ms per frame
 
-  NimBLEDevice::init("ESP32_Clock");
+  NimBLEDevice::init(BLE_NAME);
   _pServer = NimBLEDevice::createServer();
   _pServer->setCallbacks(this);
 
@@ -40,15 +35,28 @@ Ble::Ble(NimBLECharacteristicCallbacks* onWrite) {
   _pCharacteristicButton = _pService->createCharacteristic(
     BUTTON_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::WRITE);
 
+  _pCharacteristicAlarm = _pService->createCharacteristic(
+    ALARM_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::WRITE);
+
+  _pCharacteristicWifi = _pService->createCharacteristic(
+    WIFI_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::WRITE);
+
+  _pCharacteristicTimeMode = _pService->createCharacteristic(
+    TIMEMODE_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::WRITE);
+
   _pCharacteristicCustomScreen->setCallbacks(onWrite);
   _pCharacteristicTime->setCallbacks(onWrite);
   _pCharacteristicButton->setCallbacks(onWrite);
+  _pCharacteristicTimeMode->setCallbacks(onWrite);
+  _pCharacteristicWifi->setCallbacks(onWrite);
+  _pCharacteristicAlarm->setCallbacks(onWrite);
+
   _pService->start();
 
   pAdvertising = NimBLEDevice::getAdvertising();
   pAdvertising->addServiceUUID(SERVICE_UUID);
   pAdvertising->enableScanResponse(true);
-  pAdvertising->setName("Nimble ESP32_Clock");
+  pAdvertising->setName(BLE_NAME);
 
   Serial.println("BLE Initialized");
 }
