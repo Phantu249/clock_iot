@@ -102,8 +102,8 @@ void CustomScreen::onButton(Button button, Callback callback) {
     case BUTTON_DOWN:
       onButtonDown();
       break;
-    case BUTTON_RIGHT:
-      onButtonRight();
+    case BUTTON_MENU:
+      onButtonMenu();
       break;
     default:
       return;
@@ -120,6 +120,6 @@ void CustomScreen::onButtonDown() {
   isGif = false;
   currentFrame = (currentFrame - 1 + totalFrame) % totalFrame;
 };
-void CustomScreen::onButtonRight() {
+void CustomScreen::onButtonMenu() {
   if (!isGif) isGif = true;
 };

@@ -39,7 +39,9 @@ ButtonInfo buttonInfos[] = {
   { BUTTON_UP, 0 },
   { BUTTON_DOWN, 0 },
   { BUTTON_LEFT, 0 },
-  { BUTTON_RIGHT, 0 }
+  { BUTTON_RIGHT, 0 },
+  { BUTTON_BACK, 0 },
+  { BUTTON_MENU, 0 }
 };
 const int numButtons = sizeof(buttonInfos) / sizeof(buttonInfos[0]);
 const unsigned long debounceDelay = 200;  // Độ trễ debounce (ms)
@@ -56,6 +58,8 @@ void IRAM_ATTR button_isr_handler(void *arg) {
     else if (btnInfo->pin == BUTTON_DOWN) btn = BUTTON_DOWN;
     else if (btnInfo->pin == BUTTON_LEFT) btn = BUTTON_LEFT;
     else if (btnInfo->pin == BUTTON_RIGHT) btn = BUTTON_RIGHT;
+    else if (btnInfo->pin == BUTTON_BACK) btn = BUTTON_BACK;
+    else if (btnInfo->pin == BUTTON_MENU) btn = BUTTON_MENU;
 
     xQueueSendFromISR(buttonQueue, &btn, NULL);
     btnInfo->lastDebounceTime = currentTime;
@@ -97,31 +101,37 @@ public:
 };
 
 void customScreenBLEHandler(std::string value) {
-  Serial.printf("\n Receive custom");
+  Serial.printf("\n[INFO]: Receive custom screen data: %s", value);
+
   if (value.length() != 256) {
-    Serial.println("Invalid length for LED data");
+    Serial.println("\n[ERROR]: Invalid length for LED data");
     return;
   }
-  preferences.begin("custom_screen", false);  // false = read/write
+
+  preferences.begin("custom_screen", false);
 
   uint8_t totalFrame = preferences.getUChar("total_frame", 0);
-
-  uint8_t newTotalFrame = totalFrame + 1;
-  Serial.printf("\n New total frame in Flash: %d", newTotalFrame);
-
   if (totalFrame >= MAX_FRAME) {
-    Serial.printf("\n Delete old frame");
+    Serial.printf("\n[INFO]: Clear old frames and start new set of frames");
+
     preferences.clear();
     preferences.putUChar("total_frame", 1);
-  } else preferences.putUChar("total_frame", newTotalFrame);
+    totalFrame = 1;
+  } else {
+    totalFrame += 1;
 
-  uint8_t num = totalFrame % uint8_t(MAX_FRAME);
-  String name = "frame_" + String(num);
-  Serial.printf("\n Add frame %s", name);
+    Serial.printf("\n[INFO]: New total frames in flash: %d", totalFrame);
+    preferences.putUChar("totalframe", totalFrame);
+  }
+
+  Serial.printf("\n[INFO]: Add frame %d", totalFrame);
+
+  String name = "frame" + String(totalFrame - 1);
   preferences.putBytes(name.c_str(), value.data(), value.length());
 
   preferences.end();
 }
+
 
 void timeBLEHandler(std::string value) {
   memcpy(&timestamp, value.data(), sizeof(uint32_t));
@@ -279,12 +289,15 @@ void controllerTask(void *param) {
       switch (appState) {
         case CLOCK:
           switch (btn) {
-            case BUTTON_LEFT:
+            case BUTTON_BACK:
               break;
-            case BUTTON_RIGHT:
+            case BUTTON_MENU:
               delete screen;
               screen = new Menu();
               appState = MENU;
+              break;
+            case BUTTON_LEFT:
+            case BUTTON_RIGHT:
               break;
             case BUTTON_DOWN:
             case BUTTON_UP:
@@ -296,11 +309,13 @@ void controllerTask(void *param) {
           break;
         case MENU:
           switch (btn) {
-            case BUTTON_LEFT:
+            case BUTTON_BACK:
               delete screen;
               screen = new Clock(timestamp, offset);
               appState = CLOCK;
               break;
+            case BUTTON_MENU:
+            case BUTTON_LEFT:
             case BUTTON_RIGHT:
             case BUTTON_DOWN:
             case BUTTON_UP:
@@ -310,11 +325,13 @@ void controllerTask(void *param) {
           break;
         case CUSTOM:
           switch (btn) {
-            case BUTTON_LEFT:
+            case BUTTON_BACK:
               delete screen;
               screen = new Clock(timestamp, offset);
               appState = CLOCK;
               break;
+            case BUTTON_MENU:
+            case BUTTON_LEFT:
             case BUTTON_RIGHT:
             case BUTTON_DOWN:
             case BUTTON_UP:
@@ -326,11 +343,13 @@ void controllerTask(void *param) {
           break;
         case BLE:
           switch (btn) {
-            case BUTTON_LEFT:
+            case BUTTON_BACK:
               screen = new Menu();
               appState = MENU;
               bleScreen->stopAdvertising();
               break;
+            case BUTTON_MENU:
+            case BUTTON_LEFT:
             case BUTTON_RIGHT:
             case BUTTON_DOWN:
             case BUTTON_UP:
