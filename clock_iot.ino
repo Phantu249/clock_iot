@@ -468,6 +468,9 @@ void controllerTask(void *param) {
         case GAME:
           screen->onButton(btn, callback);
           break;
+        case CLOCK_SETTING:
+          screen->onButton(btn, callback);
+          break;
         case BLE:
           switch (btn) {
             case BUTTON_BACK:

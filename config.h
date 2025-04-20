@@ -22,6 +22,7 @@ typedef enum : uint8_t {
 typedef enum : uint8_t {
   CLOCK,
   MENU,
+  CLOCK_SETTING,
   GAME,
   BLE,
   CUSTOM

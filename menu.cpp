@@ -2,6 +2,7 @@
 #include "ble.h"
 #include "config.h"
 #include "snake.h"
+#include "clock_setting_screen.h"
 // Frame 16x16 cho TIME_SETTING (256 bytes, 1 byte/pixel)
 const uint8_t timeSettingFrame[] PROGMEM = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -61,6 +62,10 @@ const uint8_t game1Frame[] PROGMEM = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
+
+// Declare global variables from clock_iot.ino
+extern uint32_t timestamp;
+extern int8_t offset;
 
 Menu::Menu() {
   _frame = 10;
@@ -220,7 +225,8 @@ void Menu::onButtonMenu(Callback callback) {
     Serial.printf("\n[INFO]: _currentOption: %d", _currentOption);
     switch (_currentOption) {
       case TIME_SETTING:
-        // s = new TimeSettingScreen(); // Thêm nếu cần
+        s = new ClockSettingScreen(timestamp, offset); // Pass global variables
+        newState = State::CLOCK_SETTING;
         break;
       case BLUETOOTH_SETTING:
         // do nothing

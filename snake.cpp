@@ -97,9 +97,6 @@ CRGB* SnakeGame::draw() {
 }
 
 void SnakeGame::onButton(Button button, Callback callback) {
-  Serial.printf("\n[INFO]: In menu %d", inMenu);
-  Serial.printf("\n[INFO]: In menu %d", button);
-  Serial.printf("\n[INFO]: Callback is null %d", callback == NULL);
   if (inMenu) {
     switch (button) {
       case BUTTON_BACK:  // Tương ứng nút "X"
