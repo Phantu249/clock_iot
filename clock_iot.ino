@@ -371,6 +371,7 @@ void setup() {
   setupRing();
 
   preferences.begin("app", true);  //read only
+  uint8_t brightness = preferences.getUChar("brightness", 10);
   ssid = preferences.getString("ssid", "YOUR-SSID");
   password = preferences.getString("password", "YOUR-PASSWORD");
   timeMode = static_cast<TimeMode>(preferences.getUChar("TIMEMODE", TimeMode::MANUAL));
@@ -391,7 +392,7 @@ void setup() {
   buttonQueue = xQueueCreate(10, sizeof(uint8_t));
 
   FastLED.addLeds<LED_TYPE, LED_PIN>(frame, NUM_LEDS);
-  FastLED.setBrightness(BRIGHTNESS);
+  FastLED.setBrightness(brightness);
 
   // Cấu hình các nút (attach Interrupt)
   for (int i = 0; i < numButtons; i++) {
@@ -412,7 +413,7 @@ void controllerTask(void *param) {
   while (1) {
     if (xQueueReceive(buttonQueue, &btn, portMAX_DELAY)) {
       switch (appState) {
-        case CLOCK:
+        case State::CLOCK:
           switch (btn) {
             case BUTTON_BACK:
               break;
@@ -432,7 +433,7 @@ void controllerTask(void *param) {
               break;
           }
           break;
-        case MENU:
+        case State::MENU:
           switch (btn) {
             case BUTTON_BACK:
               delete screen;
@@ -448,7 +449,7 @@ void controllerTask(void *param) {
               break;
           }
           break;
-        case CUSTOM:
+        case State::CUSTOM:
           switch (btn) {
             case BUTTON_BACK:
               delete screen;
@@ -464,7 +465,23 @@ void controllerTask(void *param) {
               break;
           }
           break;
-        case GAME:
+        case State::GAME:
+          break;
+        case State::BRIGHTNESS:
+          switch (btn) {
+            case BUTTON_BACK:
+              delete screen;
+              screen = new Menu();
+              appState = MENU;
+              break;
+            case BUTTON_MENU:
+            case BUTTON_LEFT:
+            case BUTTON_RIGHT:
+            case BUTTON_DOWN:
+            case BUTTON_UP:
+              screen->onButton(btn);
+              break;
+          }
           break;
         case BLE:
           switch (btn) {

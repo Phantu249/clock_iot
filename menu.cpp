@@ -1,24 +1,25 @@
 #include "menu.h"
 #include "ble.h"
 #include "config.h"
+#include "brightness.h"
 
 // Frame 16x16 cho TIME_SETTING (256 bytes, 1 byte/pixel)
 const uint8_t timeSettingFrame[] PROGMEM = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-  0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 
-  0, 0, 0, 0, 3, 3, 5, 7, 7, 7, 3, 3, 0, 0, 0, 0, 
-  0, 0, 0, 3, 5, 7, 7, 7, 7, 7, 7, 7, 3, 0, 0, 0, 
-  0, 0, 0, 3, 5, 7, 7, 7, 0, 7, 7, 7, 3, 0, 0, 0, 
-  0, 0, 3, 5, 7, 7, 7, 7, 0, 7, 7, 7, 7, 3, 0, 0, 
-  0, 0, 3, 5, 7, 7, 7, 7, 0, 7, 7, 7, 7, 3, 0, 0, 
-  0, 0, 3, 5, 7, 0, 0, 0, 0, 7, 7, 7, 7, 3, 0, 0, 
-  0, 0, 3, 5, 7, 7, 7, 7, 7, 7, 7, 7, 7, 3, 0, 0, 
-  0, 0, 0, 3, 7, 7, 7, 7, 7, 7, 7, 7, 3, 0, 0, 0, 
-  0, 0, 0, 3, 7, 7, 7, 7, 7, 7, 7, 7, 3, 0, 0, 0, 
-  0, 0, 0, 0, 3, 3, 7, 7, 7, 7, 3, 3, 0, 0, 0, 0, 
-  0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 3, 3, 5, 7, 7, 7, 3, 3, 0, 0, 0, 0,
+  0, 0, 0, 3, 5, 7, 7, 7, 7, 7, 7, 7, 3, 0, 0, 0,
+  0, 0, 0, 3, 5, 7, 7, 7, 0, 7, 7, 7, 3, 0, 0, 0,
+  0, 0, 3, 5, 7, 7, 7, 7, 0, 7, 7, 7, 7, 3, 0, 0,
+  0, 0, 3, 5, 7, 7, 7, 7, 0, 7, 7, 7, 7, 3, 0, 0,
+  0, 0, 3, 5, 7, 0, 0, 0, 0, 7, 7, 7, 7, 3, 0, 0,
+  0, 0, 3, 5, 7, 7, 7, 7, 7, 7, 7, 7, 7, 3, 0, 0,
+  0, 0, 0, 3, 7, 7, 7, 7, 7, 7, 7, 7, 3, 0, 0, 0,
+  0, 0, 0, 3, 7, 7, 7, 7, 7, 7, 7, 7, 3, 0, 0, 0,
+  0, 0, 0, 0, 3, 3, 7, 7, 7, 7, 3, 3, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
@@ -62,6 +63,25 @@ const uint8_t game1Frame[] PROGMEM = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
+const uint8_t brightnessFrame[] PROGMEM = {
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 4, 4, 0, 0, 0, 0, 0, 0, 0, 
+  0, 0, 4, 4, 0, 0, 0, 4, 4, 0, 0, 0, 4, 4, 0, 0, 
+  0, 0, 4, 4, 4, 0, 0, 4, 4, 0, 0, 4, 4, 4, 0, 0, 
+  0, 0, 0, 4, 4, 0, 0, 0, 0, 0, 0, 4, 4, 0, 0, 0, 
+  0, 0, 0, 0, 0, 0, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 
+  0, 0, 0, 0, 0, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 
+  0, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 0, 
+  0, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 0, 
+  0, 0, 0, 0, 0, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 
+  0, 0, 0, 0, 0, 0, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 
+  0, 0, 0, 4, 4, 0, 0, 0, 0, 0, 0, 4, 4, 0, 0, 0, 
+  0, 0, 4, 4, 4, 0, 0, 4, 4, 0, 0, 4, 4, 4, 0, 0, 
+  0, 0, 4, 4, 0, 0, 0, 4, 4, 0, 0, 0, 4, 4, 0, 0, 
+  0, 0, 0, 0, 0, 0, 0, 4, 4, 0, 0, 0, 0, 0, 0, 0, 
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
 Menu::Menu() {
   _frame = 10;
   _currentOption = TIME_SETTING;
@@ -85,14 +105,17 @@ void Menu::renderFrame(MenuOption option, CRGB* frame) {
   const uint8_t* frameData;
 
   switch (option) {
-    case TIME_SETTING:
+    case MenuOption::TIME_SETTING:
       frameData = timeSettingFrame;
       break;
-    case BLUETOOTH_SETTING:
+    case MenuOption::BLUETOOTH_SETTING:
       frameData = bluetoothSettingFrame;
       break;
-    case GAME1:
+    case MenuOption::GAME1:
       frameData = game1Frame;
+      break;
+    case MenuOption::BRIGHTNESS_SETTING:
+      frameData = brightnessFrame;
       break;
     default:
       return;
@@ -218,14 +241,18 @@ void Menu::onButtonMenu(Callback callback) {
   if (callback) {
     Screen* s = NULL;
     switch (_currentOption) {
-      case TIME_SETTING:
+      case MenuOption::TIME_SETTING:
         // s = new TimeSettingScreen(); // Thêm nếu cần
         break;
-      case BLUETOOTH_SETTING:
+      case MenuOption::BLUETOOTH_SETTING:
         // do nothing
-        newState = BLE;
+        newState = State::BLE;
         break;
-      case GAME1:
+      case MenuOption::GAME1:
+        break;
+      case MenuOption::BRIGHTNESS_SETTING:
+        s = new Brightness();
+        newState = State::BRIGHTNESS;
         break;
       default:
         return;

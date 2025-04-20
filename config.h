@@ -8,7 +8,6 @@
 #define NUM_COLS 16
 #define NUM_LEDS NUM_ROWS* NUM_COLS  // Số lượng LED
 #define LED_TYPE NEOPIXEL            // Loại LED
-#define BRIGHTNESS 5
 
 #ifndef MAX_FRAME
 #define MAX_FRAME 5
@@ -24,7 +23,8 @@ typedef enum : uint8_t {
   MENU,
   GAME,
   BLE,
-  CUSTOM
+  CUSTOM,
+  BRIGHTNESS
 } State;
 
 const CRGB colors[16] = {
