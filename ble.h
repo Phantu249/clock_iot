@@ -14,6 +14,7 @@ constexpr auto TIMEMODE_CHARACTERISTIC_UUID = "1006";
 
 #define BLE_NAME "ESP32-S3 Digital Clock"
 
+
 class Ble : public Screen, public NimBLEServerCallbacks {
 protected:
   NimBLEServer* _pServer;

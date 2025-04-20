@@ -8,19 +8,19 @@ CustomScreen::CustomScreen() {
 
   preferences.begin("custom_screen", true);
   if (!preferences.isKey("total_frame")) {
-    Serial.println("Failed to find total_frame key");
+    Serial.print("\n[ERROR]: Failed to find total_frame key");
     preferences.end();
     return;
   }
 
   totalFrame = preferences.getUChar("total_frame", 0);
   if (totalFrame < 1 || totalFrame > MAX_FRAME) {
-    Serial.printf("Invalid total_frame: %d (must be 1 to %d)\n", totalFrame, MAX_FRAME);
+    Serial.printf("\n[ERROR]: Invalid total_frame: %d (must be 1 to %d)", totalFrame, MAX_FRAME);
     totalFrame = 0;
     preferences.end();
     return;
   }
-  Serial.printf("Retrieved total_frame: %d\n", totalFrame);
+  Serial.printf("\n[INFO]: Retrieved total_frame: %d", totalFrame);
 
   for (int i = 0; i < totalFrame; i++) {
     char frameName[16];
@@ -28,14 +28,14 @@ CustomScreen::CustomScreen() {
     if (preferences.isKey(frameName)) {
       size_t len = preferences.getBytesLength(frameName);
       if (len != NUM_LEDS) {
-        Serial.printf("Frame %s size mismatch: expected %d bytes, got %d\n", frameName, NUM_LEDS, len);
+        Serial.printf("\n[ERROR]: Frame %s size mismatch: expected %d bytes, got %d", frameName, NUM_LEDS, len);
         totalFrame = i;  // Chỉ sử dụng các frame hợp lệ trước đó
         break;
       }
       preferences.getBytes(frameName, frames[i], NUM_LEDS);
-      Serial.printf("Retrieved frame: %s (%d bytes)\n", frameName, len);
+      Serial.printf("\n[INFO]: Retrieved frame: %s (%d bytes)", frameName, len);
     } else {
-      Serial.printf("Failed to find frame: %s\n", frameName);
+      Serial.printf("\n[ERROR]: Failed to find frame: %s", frameName);
       totalFrame = i;  // Chỉ sử dụngずに các frame hợp lệ trước đó
       break;
     }
@@ -43,7 +43,7 @@ CustomScreen::CustomScreen() {
 
   preferences.end();
   if (totalFrame == 0) {
-    Serial.println("No valid frames loaded");
+    Serial.print("\n[INFO]: No valid frames loaded");
   }
 }
 
@@ -58,7 +58,7 @@ int CustomScreen::getIndex(uint8_t x, uint8_t y) {
 
 void CustomScreen::renderFrame() {
   if (totalFrame < 1 || currentFrame >= totalFrame) {
-    Serial.println("Invalid frame data");
+    Serial.print("\n[ERROR]: Invalid frame data");
     return;
   }
 

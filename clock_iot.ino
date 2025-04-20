@@ -8,6 +8,8 @@
 #include <Preferences.h>
 #include <ArduinoJson.h>
 #include "custom_screen.h"
+#include "ring.h"
+#include <string.h>
 
 String ssid;
 String password;
@@ -27,12 +29,7 @@ QueueHandle_t frameQueue;   // A queue receive a frame (an array to show)
 QueueHandle_t buttonQueue;  // A queue revice a button
 Ble *bleScreen;             // A BLE screen init default by app
 TimeMode timeMode;
-
-// Cấu trúc lưu thông tin debounce cho mỗi nút
-struct ButtonInfo {
-  int pin;
-  volatile unsigned long lastDebounceTime;
-};
+Alarm alarms[5];  // Only 5 alarms now
 
 // Mảng thông tin debounce cho các nút
 ButtonInfo buttonInfos[] = {
@@ -43,11 +40,12 @@ ButtonInfo buttonInfos[] = {
   { BUTTON_BACK, 0 },
   { BUTTON_MENU, 0 }
 };
+
 const int numButtons = sizeof(buttonInfos) / sizeof(buttonInfos[0]);
 const unsigned long debounceDelay = 200;  // Độ trễ debounce (ms)
 
 // Hàm ISR chung cho các nút
-void IRAM_ATTR button_isr_handler(void *arg) {
+void IRAM_ATTR buttonISRHandler(void *arg) {
   ButtonInfo *btnInfo = (ButtonInfo *)arg;
   unsigned long currentTime = millis();
 
@@ -71,7 +69,6 @@ class CustomBLECharacteristicCallbacks : public NimBLECharacteristicCallbacks {
 public:
   void onWrite(NimBLECharacteristic *pCharacteristic, NimBLEConnInfo &connInfo) override {
     std::string value = pCharacteristic->getValue();
-
     NimBLEUUID uuid = pCharacteristic->getUUID();
 
     if (uuid.equals(NimBLEUUID(CUSTOM_SCREEN_CHARACTERISTIC_UUID))) {
@@ -81,19 +78,19 @@ public:
       timeBLEHandler(value);
 
     } else if (uuid.equals(NimBLEUUID(ALARM_CHARACTERISTIC_UUID))) {
-      Serial.println("Received ALARM characteristic");
+      alarmBLEHandler(value);
 
     } else if (uuid.equals(NimBLEUUID(BUTTON_CHARACTERISTIC_UUID))) {
       buttonBLEHandler(value);
 
     } else if (uuid.equals(NimBLEUUID(WIFI_CHARACTERISTIC_UUID))) {
-      wifiBLEHandler(value);
+      wifiBLEHandler(value, pCharacteristic);
 
     } else if (uuid.equals(NimBLEUUID(TIMEMODE_CHARACTERISTIC_UUID))) {
       timeModeBLEHandler(value);
 
     } else {
-      Serial.println("Unknown characteristic UUID");
+      Serial.println("\n[ERROR]: Unknown characteristic UUID");
     }
 
     pCharacteristic->setValue("");
@@ -101,7 +98,7 @@ public:
 };
 
 void customScreenBLEHandler(std::string value) {
-  Serial.printf("\n[INFO]: Receive custom screen data: %s", value);
+  Serial.printf("\n[INFO]: Receive custom screen message with value length %d bytes", value.length());
 
   if (value.length() != 256) {
     Serial.println("\n[ERROR]: Invalid length for LED data");
@@ -121,115 +118,240 @@ void customScreenBLEHandler(std::string value) {
     totalFrame += 1;
 
     Serial.printf("\n[INFO]: New total frames in flash: %d", totalFrame);
-    preferences.putUChar("totalframe", totalFrame);
+    preferences.putUChar("total_frame", totalFrame);
   }
 
   Serial.printf("\n[INFO]: Add frame %d", totalFrame);
 
-  String name = "frame" + String(totalFrame - 1);
+  String name = "frame_" + String(totalFrame - 1);
   preferences.putBytes(name.c_str(), value.data(), value.length());
 
   preferences.end();
 }
 
-
 void timeBLEHandler(std::string value) {
-  memcpy(&timestamp, value.data(), sizeof(uint32_t));
-  Serial.printf("Timestamp: %d ", timestamp);
+  Serial.printf("\n[INFO]: Receive set timestamp message with value %s", value.c_str());
+
+  timestamp = atoi(value.c_str());
+
+  Serial.printf("\n[INFO]: Timestamp: %d ", timestamp);
 }
 
 void timeModeBLEHandler(std::string value) {
-  if (value.length() < 1) return;
-  Serial.printf("\n Set time mode to %s", value.c_str());
+  Serial.printf("\n[INFO]: Receive set time mode message with value %s", value.c_str());
+
   timeMode = static_cast<TimeMode>(atoi(value.c_str()));
 
-  preferences.begin("app", false);  // false = read/write
-  preferences.putUChar("TIMEMODE", timeMode);
+  preferences.begin("app", false);
+  preferences.putUChar("time_mode", timeMode);
   preferences.end();
 
   switch (timeMode) {
     case TimeMode::AUTO:
       getTime();
       break;
-    case TimeMode::MANUAL:
-      break;
-    default:
-      return;
+    case TimeMode::MANUAL: break;
   }
 }
 
-void alarmBLEHandler(std::string value) {
+void takeAlarmsOut() {
+  preferences.begin("app", true);
+  String alarmsStr = preferences.getString("alarms", "");
+  preferences.end();
+
+  char *payload[5] = { nullptr };
+  int payloadLength;
+  char *value_cstr = strdup(alarmsStr.c_str());
+
+  char *token = strtok(value_cstr, &DELIMITER);
+
+  for (payloadLength = 0; token != nullptr && payloadLength < 5; payloadLength += 1) {
+    payload[payloadLength] = token;
+    token = strtok(nullptr, &DELIMITER);
+  }
+
+  for (int i = 0; i < payloadLength; i++) {
+    // Check if time format is valid (HH:MM or XX:XX)
+    if (strlen(payload[i]) == 5 && payload[i][2] == ':') {
+      char hour_str[3] = { payload[i][0], payload[i][1], '\0' };
+      char minute_str[3] = { payload[i][3], payload[i][4], '\0' };
+
+      uint8_t hour = atoi(hour_str);
+      uint8_t minute = atoi(minute_str);
+
+      alarms[i].hour = hour;
+      alarms[i].minute = minute;
+      Serial.printf("\n[INFO]: Loaded alarm %02d:%02d", alarms[i].hour, alarms[i].minute);
+    }
+  }
+
+  free(value_cstr);
 }
 
-void wifiBLEHandler(std::string value) {
-  // Chuyển std::string sang String
+void alarmBLEHandler(std::string value) {
+  Serial.printf("\n[INFO]: Receive set alarm message with value %s", value.c_str());
+
+  char *payload[5] = { nullptr };
+  int payloadLength;
+
+  for (int i = 0; i < 5; i++) {
+    alarms[i] = { -1, -1 };
+  }
+
+  char *value_cstr = strdup(value.c_str());
+  char *token = strtok(value_cstr, &DELIMITER);
+
+  for (payloadLength = 0; token != nullptr && payloadLength < 5; payloadLength += 1) {
+    payload[payloadLength] = token;
+    token = strtok(nullptr, &DELIMITER);
+  }
+
+  int validAlarmCount = 0;  // Track number of valid alarms
+  for (int i = 0; i < payloadLength; i++) {
+    // Check if time format is valid (HH:MM or XX:XX)
+    if (strlen(payload[i]) == 5 && payload[i][2] == ':') {
+      // Verify hours and minutes are numeric
+      bool valid = true;
+      for (int j = 0; j < 5; j++) {
+        if (j == 2) continue;  // Skip colon
+        if (!isdigit(payload[i][j])) {
+          valid = false;
+          break;
+        }
+      }
+
+      if (valid) {
+        char hour_str[3] = { payload[i][0], payload[i][1], '\0' };
+        char minute_str[3] = { payload[i][3], payload[i][4], '\0' };
+
+        // Convert to uint8_t
+        uint8_t hour = atoi(hour_str);
+        uint8_t minute = atoi(minute_str);
+
+        if (hour <= 23 && minute <= 59) {
+          alarms[validAlarmCount].hour = hour;
+          alarms[validAlarmCount].minute = minute;
+          Serial.printf("\n[INFO]: Saved %02d:%02d", alarms[validAlarmCount].hour, alarms[validAlarmCount].minute);
+          validAlarmCount++;
+        } else {
+          Serial.printf("\n[ERROR]: Invalid alarm format %s", payload[i]);
+        }
+      } else {
+        Serial.printf("\n[ERROR]: Invalid alarm format %s", payload[i]);
+      }
+    } else {
+      Serial.printf("\n[ERROR]: Invalid alarm format %s (malformed)", payload[i]);
+    }
+  }
+
+  // Build the output string for valid alarms (e.g., "12:00,07:00")
+  std::string alarmString = "";
+  for (int i = 0; i < validAlarmCount; i++) {
+    char timeStr[6];  // Buffer for "XX:XX\0"
+    snprintf(timeStr, sizeof(timeStr), "%02d:%02d", alarms[i].hour, alarms[i].minute);
+    alarmString += timeStr;
+    if (i < validAlarmCount - 1) {
+      alarmString += ",";
+    }
+  }
+
+
+  preferences.begin("app", false);
+  preferences.putString("alarms", alarmString.c_str());
+  Serial.printf("\n[INFO]: Stored alarms in Preferences: %s", alarmString.c_str());
+  preferences.end();
+
+  free(value_cstr);  // Free the mutable copy
+}
+
+void wifiBLEHandler(std::string value, NimBLECharacteristic *pCharacteristic) {
+  Serial.printf("\n[INFO]: Receive set WiFi message with value %s", value.c_str());
+
   String jsonString = String(value.c_str());
 
-  // Khởi tạo bộ phân tích JSON
   StaticJsonDocument<256> doc;
   DeserializationError error = deserializeJson(doc, jsonString);
 
   if (error) {
-    Serial.print("Lỗi phân tích JSON: ");
-    Serial.println(error.c_str());
+    Serial.printf("\n[ERROR]: Invalid JSON %s", error.c_str());
     return;
   }
 
-  // Lấy ssid và password từ JSON
   const char *newSsid = doc["ssid"];
   const char *newPassword = doc["password"];
 
-  Serial.println("SSID: " + String(newSsid));
-  Serial.println("Password: " + String(newPassword));
+  Serial.printf("\n[INFO]: Extracted SSID: %s, Password: %s", newSsid, newPassword);
+  Serial.printf("\n[INFO]: Try to connect to WiFi %s", newSsid);
 
-  // Lưu vào Preferences
-  preferences.begin("app", false);  // false = read/write
-  preferences.putString("SSID", newSsid);
-  preferences.putString("PASSWORD", newPassword);
+  WiFi.begin(ssid.c_str(), password.c_str());
+
+  uint32_t start = millis();
+  while (WiFi.status() != WL_CONNECTED) {
+    if (millis() - start > WIFI_TIMEOUT_MS) {
+      Serial.println("\n[ERROR]: Cannot connect to WiFi - notify error");
+      // "1" means error, kinda lazy to introduce new macro
+      pCharacteristic->setValue("1");
+      pCharacteristic->notify();
+
+      return;
+    }
+
+    delay(500);
+    Serial.print(".");
+  }
+
+  preferences.begin("app", false);
+  preferences.putString("ssid", newSsid);
+  preferences.putString("password", newPassword);
   preferences.end();
 
+  // Update global variables
   ssid = String(newSsid);
   password = String(newPassword);
 
-  Serial.println("Đã lưu ssid và password vào Preferences!");
+  // "0" means success, kinda lazy to introduce new macro too :D
+  pCharacteristic->setValue("0");
+  pCharacteristic->notify();
+
+  Serial.print("\n[INFO]: Successfully to update new WiFi!");
 }
 
 void buttonBLEHandler(std::string value) {
-  if (value.length() < 1) {
-    Serial.println("Invalid button data");
-    return;
-  }
+  Serial.printf("\n[INFO]: Receive button pressed message with value %s", value.c_str());
+
   uint8_t buttonId = value[0];
   Button btn = static_cast<Button>(buttonId);
+
   if (xQueueSend(buttonQueue, &btn, 0) == pdTRUE) {
-    Serial.printf("Button %d enqueued.\n", btn);
+    Serial.printf("\n[INFO]: Button %d enqueued", btn);
   } else {
-    Serial.println("Queue full, button dropped.");
+    Serial.print("\n[INFO]: Queue full, button dropped");
   }
 }
 
 void getTime() {
   WiFi.begin(ssid.c_str(), password.c_str());
-  Serial.printf("Try to connecting WiFi %s \n", ssid.c_str());
+  Serial.printf("\n[INFO]: Try to connecting WiFi %s to sync time", ssid.c_str());
 
   uint32_t start = millis();
   while (WiFi.status() != WL_CONNECTED) {
     if (millis() - start > WIFI_TIMEOUT_MS) {
-      Serial.println("\nWiFi timed out – skipping NTP sync");
+      // figure out a way to notify for user that wifi is wrong or cannot connect.
+      Serial.println("\n[ERROR]: WiFi timed out – skipping NTP sync");
       return;
     }
     delay(500);
     Serial.print(".");
   }
 
-  Serial.println("\nWiFi connected");
+  Serial.println("\n[INFO]: WiFi connected, ready to sync time");
 
   int32_t gmtOffsetSec = offset * 3600;
   configTime(gmtOffsetSec, 0, ntpServer);
 
   struct tm timeinfo;
   if (!getLocalTime(&timeinfo)) {
-    Serial.println("Failed to get NTP time – leaving timestamp as is");
+    Serial.println("\n[ERROR]: Failed to get NTP time – leaving timestamp as is");
     WiFi.disconnect(true);
     WiFi.mode(WIFI_OFF);
     return;
@@ -237,8 +359,7 @@ void getTime() {
 
   timestamp = mktime(&timeinfo);
   lastUpdate = millis();
-  Serial.print("NTP sync timestamp: ");
-  Serial.println(timestamp);
+  Serial.printf("\n[INFO]: NTP sync timestamp: %d", timestamp);
 
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
@@ -247,12 +368,16 @@ void getTime() {
 void setup() {
   Serial.begin(9600);
 
-  preferences.begin("app", true);  //read only
-  ssid = preferences.getString("SSID", "YOUR-SSID");
-  password = preferences.getString("PASSWORD", "YOUR-PASSWORD");
-  timeMode = static_cast<TimeMode>(preferences.getUChar("TIMEMODE", TimeMode::MANUAL));
+  setupRing();
 
-  Serial.printf("System run at %s mode \n", timeMode == TimeMode::AUTO ? "AUTO" : "MANUAL");
+  preferences.begin("app", true);  //read only
+  ssid = preferences.getString("ssid", "YOUR-SSID");
+  password = preferences.getString("password", "YOUR-PASSWORD");
+  timeMode = static_cast<TimeMode>(preferences.getUChar("TIMEMODE", TimeMode::MANUAL));
+  takeAlarmsOut();
+  preferences.end();
+
+  Serial.printf("\n[INFO]: System run at %s mode", timeMode == TimeMode::AUTO ? "AUTO" : "MANUAL");
 
   if (timeMode == TimeMode::AUTO) getTime();
 
@@ -271,7 +396,7 @@ void setup() {
   // Cấu hình các nút (attach Interrupt)
   for (int i = 0; i < numButtons; i++) {
     pinMode(buttonInfos[i].pin, INPUT_PULLUP);
-    attachInterruptArg(digitalPinToInterrupt(buttonInfos[i].pin), button_isr_handler, &buttonInfos[i], FALLING);
+    attachInterruptArg(digitalPinToInterrupt(buttonInfos[i].pin), buttonISRHandler, &buttonInfos[i], FALLING);
   }
 
   //Task create
@@ -407,6 +532,8 @@ void drawTask(void *param) {
 }
 
 void intervalTimeUpdater(void *param) {
+  static bool alarmTriggered[5] = { false };  // Track which alarms have triggered to avoid repeated calls
+
   for (;;) {
     uint32_t currentMillis = millis();
 
@@ -421,6 +548,25 @@ void intervalTimeUpdater(void *param) {
 
     if (timeMode == TimeMode::AUTO && timestamp % 86400 == 0 && timestamp > 0) {
       getTime();
+    }
+
+    uint8_t hour = ((timestamp + (offset * 3600)) % 86400) / 3600;
+    uint8_t minute = (timestamp % 3600) / 60;
+
+    for (int i = 0; i < 5; i += 1) {
+      if (alarms[i].hour == -1 && alarms[i].minute == -1) {
+        alarmTriggered[i] = false;  // Reset trigger state for unset alarms
+        continue;
+      }
+
+      if (alarms[i].hour == hour && alarms[i].minute == minute && !alarmTriggered[i]) {
+        ring();                    // Call the ring function
+        alarmTriggered[i] = true;  // Mark alarm as triggered
+        Serial.printf("\n[INFO]: Alarm %d triggered at %02d:%02d",
+                      i + 1, alarms[i].hour, alarms[i].minute);
+      } else if (alarms[i].hour != hour || alarms[i].minute != minute) {
+        alarmTriggered[i] = false;  // Reset trigger state when time no longer matches
+      }
     }
 
     vTaskDelay(1000 / portTICK_PERIOD_MS);
