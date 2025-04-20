@@ -319,8 +319,7 @@ void wifiBLEHandler(std::string value, NimBLECharacteristic *pCharacteristic) {
 void buttonBLEHandler(std::string value) {
   Serial.printf("\n[INFO]: Receive button pressed message with value %s", value.c_str());
 
-  uint8_t buttonId = value[0];
-  Button btn = static_cast<Button>(buttonId);
+  Button btn = static_cast<Button>(atoi(value.c_str()));
 
   if (xQueueSend(buttonQueue, &btn, 0) == pdTRUE) {
     Serial.printf("\n[INFO]: Button %d enqueued", btn);
