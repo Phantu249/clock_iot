@@ -1,4 +1,5 @@
 #include "snake.h"
+#include "menu.h"
 
 SnakeGame::SnakeGame() {
   length = 3;
@@ -7,20 +8,20 @@ SnakeGame::SnakeGame() {
   snake[2] = {3, 5};
   dx = 1;
   dy = 0;
-  _frame = 30; // vẽ 30 lần/giây
-  moveInterval = 200; // rắn di chuyển mỗi 200ms (5 lần/giây)
+  _frame = 30;
+  moveInterval = 200;
   lastMoveTime = millis();
   gameOver = false;
+  inMenu = false;
   generateFood();
 }
 
-// 👉 Mapping kiểu zigzag
 uint16_t SnakeGame::getIndex(uint8_t x, uint8_t y) {
-  uint8_t physicalY = HEIGHT - 1 - y;  // y=0 -> physicalY=15, y=15 -> physicalY=0
+  uint8_t physicalY = y;
   if (physicalY % 2 == 0) {
-    return physicalY * WIDTH + x;  // Hàng chẵn: x tăng (trái -> phải)
+    return physicalY * WIDTH + x;
   } else {
-    return physicalY * WIDTH + (WIDTH - 1 - x);  // Hàng lẻ: x giảm (phải -> trái)
+    return physicalY * WIDTH + (WIDTH - 1 - x);
   }
 }
 
@@ -59,10 +60,10 @@ void SnakeGame::moveSnake() {
 
   snake[0] = newHead;
 
-  for (int i = 1; i < length; ++i) { // Sửa lỗi: bắt đầu từ i=1 để bỏ qua đầu rắn
+  for (int i = 1; i < length; ++i) {
     if (newHead == snake[i]) {
       gameOver = true;
-      gameOverTime = millis();
+      inMenu = true;  // Vào menu khi game over
       return;
     }
   }
@@ -71,46 +72,17 @@ void SnakeGame::moveSnake() {
 CRGB* SnakeGame::draw() {
   unsigned long now = millis();
 
-  if (gameOver) {
-    if (!gameOverEffectDone) {
-      // Nháy đèn đỏ 3 lần mỗi 200ms
-      static int flashCount = 0;
-      static bool on = false;
-      static unsigned long lastFlash = 0;
-
-      if (now - lastFlash > 200) {
-        lastFlash = now;
-        on = !on;
-        flashCount++;
-
-        fill_solid(leds, WIDTH * HEIGHT, on ? CRGB::Red : CRGB::Black);
-      }
-
-      if (flashCount >= 6) {  // 3 lần nháy (on/off)
-        gameOverEffectDone = true;
-        gameOverTime = now;  // đánh dấu thời gian bắt đầu hiển thị chữ
-      }
-
-      return leds;
-    }
-
-    // Sau khi nháy xong → hiển thị "GAME OVER"
-    if (now - gameOverTime < 2000) {
-      fill_solid(leds, WIDTH * HEIGHT, CRGB::Black);
-      drawGameOverText();
-      return leds;
-    }
-
-    return leds; // quay về Clock sẽ được xử lý ở controller
+  if (inMenu) {
+    fill_solid(leds, WIDTH * HEIGHT, CRGB::Black);
+    drawMenu();  // Hiển thị menu với nút X và V
+    return leds;
   }
 
-  // Bình thường: rắn di chuyển
   if (now - lastMoveTime >= moveInterval) {
     lastMoveTime = now;
     moveSnake();
   }
 
-  // Vẽ rắn
   fill_solid(leds, WIDTH * HEIGHT, CRGB::Black);
   for (int i = 0; i < length; ++i) {
     if (i == 0)
@@ -119,27 +91,59 @@ CRGB* SnakeGame::draw() {
       leds[getIndex(snake[i].x, snake[i].y)] = CRGB::Green;
   }
 
-  // Vẽ đồ ăn
   leds[getIndex(food.x, food.y)] = CRGB::Yellow;
 
   return leds;
 }
 
-void SnakeGame::onButton(Button button, Callback _c) {
+void SnakeGame::onButton(Button button, Callback callback) {
+  Serial.printf("\n[INFO]: In menu %d", inMenu);
+  Serial.printf("\n[INFO]: In menu %d", button);
+  Serial.printf("\n[INFO]: Callback is null %d", callback == NULL);
+  if (inMenu) {
+    switch (button) {
+      case BUTTON_BACK:  // Tương ứng nút "X"
+        if (gameOver) {
+          resetGame();  // Chơi lại từ đầu
+        } else {
+          restoreState();  // Khôi phục trò chơi
+        }
+        inMenu = false;
+        break;
+      case BUTTON_MENU:  // Tương ứng nút "V"
+        if (callback) {
+          Screen *s = new Menu();
+          callback(s, State::MENU);  // Thoát về Clock
+        }
+        break;
+      default:
+        break;
+    }
+    return;
+  }
+
   switch (button) {
     case BUTTON_UP:    onButtonUp(); break;
     case BUTTON_DOWN:  onButtonDown(); break;
     case BUTTON_LEFT:  onButtonLeft(); break;
     case BUTTON_RIGHT: onButtonRight(); break;
+    case BUTTON_BACK:
+      saveState();  // Lưu trạng thái
+      inMenu = true;  // Vào menu
+      break;
+    case BUTTON_MENU:
+      // Không làm gì ngoài menu, hoặc có thể tùy chỉnh
+      break;
+    default: break;
   }
 }
 
 void SnakeGame::onButtonUp() {
-  if (dy == 0) { dx = 0; dy = -1; }
+  if (dy == 0) { dx = 0; dy = 1; }
 }
 
 void SnakeGame::onButtonDown() {
-  if (dy == 0) { dx = 0; dy = 1; }
+  if (dy == 0) { dx = 0; dy = -1; }
 }
 
 void SnakeGame::onButtonLeft() {
@@ -148,6 +152,14 @@ void SnakeGame::onButtonLeft() {
 
 void SnakeGame::onButtonRight() {
   if (dx == 0) { dx = 1; dy = 0; }
+}
+
+void SnakeGame::onButtonBack() {
+  // Xử lý trong onButton()
+}
+
+void SnakeGame::onButtonMenu() {
+  // Xử lý trong onButton()
 }
 
 uint8_t SnakeGame::getFrame() {
@@ -160,12 +172,113 @@ bool SnakeGame::isGameOver() {
 
 void SnakeGame::endGame() {
   gameOver = true;
+  inMenu = true;
 }
 
-void SnakeGame::drawGameOverText() {
-  // Ví dụ hiển thị chữ X màu trắng
-  for (int i = 0; i < HEIGHT; ++i) {
-    leds[getIndex(i, i)] = CRGB::White;
-    leds[getIndex(WIDTH - 1 - i, i)] = CRGB::White;
+void SnakeGame::saveState() {
+  savedLength = length;
+  for (int i = 0; i < length; ++i) {
+    savedSnake[i] = snake[i];
+  }
+  savedDx = dx;
+  savedDy = dy;
+  savedFood = food;
+  savedLastMoveTime = lastMoveTime;
+  savedGameOver = gameOver;
+}
+
+void SnakeGame::restoreState() {
+  length = savedLength;
+  for (int i = 0; i < length; ++i) {
+    snake[i] = savedSnake[i];
+  }
+  dx = savedDx;
+  dy = savedDy;
+  food = savedFood;
+  lastMoveTime = savedLastMoveTime;
+  gameOver = savedGameOver;
+}
+
+void SnakeGame::resetGame() {
+  length = 3;
+  snake[0] = {5, 5};
+  snake[1] = {4, 5};
+  snake[2] = {3, 5};
+  dx = 1;
+  dy = 0;
+  lastMoveTime = millis();
+  gameOver = false;
+  inMenu = false;
+  generateFood();
+}
+
+void SnakeGame::drawMenu() {
+  // Vẽ nút "X" (5x5) ở góc trái trên (x=1, y=HEIGHT-6)
+  const uint8_t xBitmap[5][5] = {
+    {1, 0, 0, 0, 1},
+    {0, 1, 0, 1, 0},
+    {0, 0, 1, 0, 0},
+    {0, 1, 0, 1, 0},
+    {1, 0, 0, 0, 1}
+  };
+  for (uint8_t y = 0; y < 5; y++) {
+    for (uint8_t x = 0; x < 5; x++) {
+      if (xBitmap[y][x] && x + 1 < WIDTH && y + HEIGHT - 6 < HEIGHT) {
+        leds[getIndex(x + 1, HEIGHT - 6 + y)] = CRGB::White;
+      }
+    }
+  }
+
+  // Vẽ nút "Check" (5x5) ở góc phải trên (x=WIDTH-6, y=HEIGHT-6)
+  const uint8_t checkBitmap[6][6] = {
+    {0, 1, 0, 0, 0, 0},
+    {1, 0, 1, 0, 0, 0},
+    {0, 0, 0, 1, 0, 0},
+    {0, 0, 0, 0, 1, 0},
+    {0, 0, 0, 0, 0, 1}
+  };
+  for (uint8_t y = 0; y < 6; y++) {
+    for (uint8_t x = 0; x < 6; x++) {
+      if (checkBitmap[y][x] && x + WIDTH - 6 < WIDTH && y + HEIGHT - 6 < HEIGHT) {
+        leds[getIndex(x + WIDTH - 7, HEIGHT - 6 + y)] = CRGB::White;
+      }
+    }
+  }
+
+  // Vẽ chữ "Exit" (4 ký tự, mỗi ký tự 3x3) ở giữa dưới (x=4, y=8)
+  const uint8_t eBitmap[3][3] = {
+    {1, 1, 1},
+    {1, 1, 0},
+    {1, 1, 1}
+  };
+  const uint8_t xBitmapSmall[3][3] = {
+    {1, 0, 1},
+    {0, 1, 0},
+    {1, 0, 1}
+  };
+  const uint8_t iBitmap[3][3] = {
+    {0, 1, 0},
+    {0, 1, 0},
+    {0, 1, 0}
+  };
+  const uint8_t tBitmap[3][3] = {
+    {1, 1, 1},
+    {0, 1, 0},
+    {0, 1, 0}
+  };
+
+  // Mảng con trỏ đến các bitmap, sắp xếp để hiển thị "E X I T" từ trái sang phải
+  const uint8_t (*exitBitmaps[4])[3] = {eBitmap, xBitmapSmall, iBitmap, tBitmap};
+  // Offset cho từng ký tự: E(0), X(4), I(8), T(9)
+  const uint8_t xOffsets[4] = {0, 4, 7, 10};
+  for (int charIdx = 0; charIdx < 4; charIdx++) {
+    for (uint8_t y = 0; y < 3; y++) {
+      for (uint8_t x = 0; x < 3; x++) {
+        // Chỉ vẽ cột giữa cho "I" (charIdx=2, x=1)
+        if ((charIdx != 2 || x == 1) && exitBitmaps[charIdx][2 - y][x] && x + 2 + xOffsets[charIdx] < WIDTH && y + 6 < HEIGHT) {
+          leds[getIndex(x + 2 + xOffsets[charIdx], 4 + y)] = CRGB::White;
+        }
+      }
+    }
   }
 }
