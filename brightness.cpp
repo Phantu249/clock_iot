@@ -1,3 +1,4 @@
+#include "HardwareSerial.h"
 #include "brightness.h"
 
 uint8_t brightnessAdjustFrame[] = {
@@ -65,10 +66,10 @@ void Brightness::updateBrightnessInFrame() {
 
   // Cập nhật mảng brightnessAdjustFrame
   for (int i = 0; i < NUM_BRIGHTNESS_PIXEL; i++) {
-    if (i < numBrightness) {
-      brightnessAdjustFrame[i + 114] = CRGB::White;
+    if (i < numBrightness + 1) {
+      brightnessAdjustFrame[i + 114] = 7;
     } else {
-      brightnessAdjustFrame[i + 114] = CRGB::Black;
+      brightnessAdjustFrame[i + 114] = 0;
     }
   }
 }
@@ -95,13 +96,15 @@ void Brightness::onButtonRight() {
   currentBrightness = (currentBrightness + MAX_BRIGHTNESS / NUM_BRIGHTNESS_PIXEL) % MAX_BRIGHTNESS;
   updateBrightnessInFrame();  // Cập nhật mảng
 };
+
 void Brightness::onButtonLeft() {
   currentBrightness = (currentBrightness - MAX_BRIGHTNESS / NUM_BRIGHTNESS_PIXEL + MAX_BRIGHTNESS) % MAX_BRIGHTNESS;
   updateBrightnessInFrame();  // Cập nhật mảng
 };
+
 void Brightness::onButtonMenu() {
   FastLED.setBrightness(currentBrightness);
   preferences.begin("app", false);
-  currentBrightness = preferences.putUChar("brightness", currentBrightness);
+  preferences.putUChar("brightness", currentBrightness);
   preferences.end();
 };
