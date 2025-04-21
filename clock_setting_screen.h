@@ -18,6 +18,7 @@ private:
   SettingState settingState;
   bool blinkState;
   uint32_t lastBlinkTime;
+  CRGB buffer[NUM_LEDS];
   static const uint16_t BLINK_INTERVAL = 500; // 1s blink interval
   static const uint8_t MATRIX_WIDTH = 16;
   static const uint8_t MATRIX_HEIGHT = 16;

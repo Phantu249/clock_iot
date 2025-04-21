@@ -1,5 +1,20 @@
+#include "HardwareSerial.h"
 #include "clock_setting_screen.h"
 #include "menu.h"
+
+// Font 3x5
+const uint8_t digit_patterns[10][5] = {
+  {0x07, 0x05, 0x05, 0x05, 0x07}, // 0
+  {0x02, 0x02, 0x02, 0x02, 0x02}, // 1
+  {0x07, 0x04, 0x07, 0x01, 0x07}, // 2
+  {0x07, 0x01, 0x07, 0x01, 0x07}, // 3
+  {0x01, 0x01, 0x07, 0x05, 0x05}, // 4
+  {0x07, 0x01, 0x07, 0x04, 0x07}, // 5
+  {0x07, 0x05, 0x07, 0x04, 0x07}, // 6
+  {0x01, 0x01, 0x01, 0x01, 0x07}, // 7
+  {0x07, 0x05, 0x07, 0x05, 0x07}, // 8
+  {0x07, 0x01, 0x07, 0x05, 0x07}, // 9
+};
 
 ClockSettingScreen::ClockSettingScreen(uint32_t& timestamp, int8_t offset) : timestamp(timestamp), offset(offset) {
   _frame = 10; // Match typical frame rate for smooth display
@@ -22,24 +37,10 @@ uint16_t ClockSettingScreen::getLedIndex(uint8_t x, uint8_t y) {
 }
 
 void ClockSettingScreen::drawDigit(uint8_t digit, uint8_t x, uint8_t y, CRGB color) {
-  // Simple 3x5 digit patterns (0-9)
-  static const uint8_t digits[10][15] = {
-    {0x07, 0x05, 0x05, 0x05, 0x07}, // 0
-    {0x02, 0x02, 0x02, 0x02, 0x02}, // 1
-    {0x07, 0x04, 0x07, 0x01, 0x07}, // 2
-    {0x07, 0x01, 0x07, 0x01, 0x07}, // 3
-    {0x01, 0x01, 0x07, 0x05, 0x05}, // 4
-    {0x07, 0x01, 0x07, 0x04, 0x07}, // 5
-    {0x07, 0x05, 0x07, 0x04, 0x07}, // 6
-    {0x01, 0x01, 0x01, 0x01, 0x07}, // 7
-    {0x07, 0x05, 0x07, 0x05, 0x07}, // 8
-    {0x07, 0x01, 0x07, 0x05, 0x07}, // 9
-  };
-
   for (uint8_t dy = 0; dy < 5; dy++) {
     for (uint8_t dx = 0; dx < 3; dx++) {
-      if (digits[digit][dy * 3 + dx]) {
-        frame[getLedIndex(x + dx, y + dy)] = color;
+      if (digit_patterns[digit][dy] & (1 << (2-dx))) {
+        buffer[(dy + y) * 16 + dx + x] = color;
       }
     }
   }
@@ -47,6 +48,7 @@ void ClockSettingScreen::drawDigit(uint8_t digit, uint8_t x, uint8_t y, CRGB col
 
 void ClockSettingScreen::drawTime() {
   // Clear frame
+  fill_solid(buffer, NUM_LEDS, CRGB::Black);
   fill_solid(frame, NUM_LEDS, CRGB::Black);
 
   // Get hours and minutes
@@ -64,12 +66,21 @@ void ClockSettingScreen::drawTime() {
   CRGB minuteColor = (settingState == SETTING_MINUTE && !blinkState) ? CRGB::Black : CRGB::White;
 
   // Giờ (ở hàng trên – ví dụ y = 10)
-  drawDigit(h1, 4, 2, hourColor);  // chỉnh lại x nếu cần căn giữa
-  drawDigit(h2, 8, 2, hourColor);
+  drawDigit(h1, 4, 9, hourColor);  // chỉnh lại x nếu cần căn giữa
+  drawDigit(h2, 9, 9, hourColor);
 
   // Phút (ở hàng dưới – ví dụ y = 3)
-  drawDigit(m1, 4, 10, minuteColor);
-  drawDigit(m2, 8, 10, minuteColor);
+  drawDigit(m1, 4, 2, minuteColor);
+  drawDigit(m2, 9, 2, minuteColor);
+
+  for (int y = 0; y < NUM_COLS; y += 1) {
+    for (int x = 0; x < NUM_ROWS; x += 1) {
+      int srcIndex = y * NUM_COLS + x;
+      int zigzagX = (y % 2 == 0) ? x : 15 - x;
+      int dstIndex = y * NUM_COLS + zigzagX;
+      frame[dstIndex] = buffer[srcIndex];
+    }
+  }
 }
 
 CRGB* ClockSettingScreen::draw() {
