@@ -16,7 +16,7 @@ String ssid;
 String password;
 Preferences preferences;
 
-static const uint32_t WIFI_TIMEOUT_MS = 10000;
+static const uint32_t WIFI_TIMEOUT_MS = 20000;
 
 uint32_t timestamp = 0;
 uint64_t lastUpdate = 0;
@@ -94,7 +94,9 @@ public:
       Serial.println("\n[ERROR]: Unknown characteristic UUID");
     }
 
-    pCharacteristic->setValue("");
+    if (!uuid.equals(NimBLEUUID(WIFI_CHARACTERISTIC_UUID))) {
+      pCharacteristic->setValue("");
+    }
   };
 };
 
@@ -297,7 +299,7 @@ void wifiBLEHandler(std::string value, NimBLECharacteristic *pCharacteristic) {
       return;
     }
 
-    delay(500);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
     Serial.print(".");
   }
 
@@ -340,7 +342,8 @@ void getTime() {
       Serial.println("\n[ERROR]: WiFi timed out – skipping NTP sync");
       return;
     }
-    delay(500);
+
+    vTaskDelay(500 / portTICK_PERIOD_MS);
     Serial.print(".");
   }
 
@@ -584,10 +587,10 @@ void intervalTimeUpdater(void *param) {
       }
 
       if (alarms[i].hour == hour && alarms[i].minute == minute && !alarmTriggered[i]) {
+        Serial.printf("\n[INFO]: Alarm %d triggered at %02d:%02d",
+              i + 1, alarms[i].hour, alarms[i].minute);
         ring();                    // Call the ring function
         alarmTriggered[i] = true;  // Mark alarm as triggered
-        Serial.printf("\n[INFO]: Alarm %d triggered at %02d:%02d",
-                      i + 1, alarms[i].hour, alarms[i].minute);
       } else if (alarms[i].hour != hour || alarms[i].minute != minute) {
         alarmTriggered[i] = false;  // Reset trigger state when time no longer matches
       }
