@@ -286,7 +286,7 @@ void wifiBLEHandler(std::string value, NimBLECharacteristic *pCharacteristic) {
   Serial.printf("\n[INFO]: Extracted SSID: %s, Password: %s", newSsid, newPassword);
   Serial.printf("\n[INFO]: Try to connect to WiFi %s", newSsid);
 
-  WiFi.begin(ssid.c_str(), password.c_str());
+  WiFi.begin(newSsid, newPassword);
 
   uint32_t start = millis();
   while (WiFi.status() != WL_CONNECTED) {
