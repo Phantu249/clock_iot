@@ -375,7 +375,7 @@ void setup() {
   uint8_t brightness = preferences.getUChar("brightness", 10);
   ssid = preferences.getString("ssid", "YOUR-SSID");
   password = preferences.getString("password", "YOUR-PASSWORD");
-  timeMode = static_cast<TimeMode>(preferences.getUChar("TIMEMODE", TimeMode::MANUAL));
+  timeMode = static_cast<TimeMode>(preferences.getUChar("time_mode", TimeMode::MANUAL));
   takeAlarmsOut();
   preferences.end();
 
@@ -488,7 +488,7 @@ void controllerTask(void *param) {
               break;
           }
           break;
-        case BLE:
+        case State::BLE:
           switch (btn) {
             case BUTTON_BACK:
               screen = new Menu();
