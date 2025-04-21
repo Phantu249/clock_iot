@@ -7,6 +7,7 @@ typedef enum : uint8_t {
   TIME_SETTING,
   BLUETOOTH_SETTING,
   GAME1,
+  BRIGHTNESS_SETTING,
   MENU_OPTION_COUNT
 } MenuOption;
 
