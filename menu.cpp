@@ -1,24 +1,28 @@
 #include "menu.h"
 #include "ble.h"
 #include "config.h"
+#include "snake.h"
+#include "clock_setting_screen.h"
+#include "brightness.h"
+#include "tetris.h"
 
 // Frame 16x16 cho TIME_SETTING (256 bytes, 1 byte/pixel)
 const uint8_t timeSettingFrame[] PROGMEM = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-  0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 
-  0, 0, 0, 0, 3, 3, 5, 7, 7, 7, 3, 3, 0, 0, 0, 0, 
-  0, 0, 0, 3, 5, 7, 7, 7, 7, 7, 7, 7, 3, 0, 0, 0, 
-  0, 0, 0, 3, 5, 7, 7, 7, 0, 7, 7, 7, 3, 0, 0, 0, 
-  0, 0, 3, 5, 7, 7, 7, 7, 0, 7, 7, 7, 7, 3, 0, 0, 
-  0, 0, 3, 5, 7, 7, 7, 7, 0, 7, 7, 7, 7, 3, 0, 0, 
-  0, 0, 3, 5, 7, 0, 0, 0, 0, 7, 7, 7, 7, 3, 0, 0, 
-  0, 0, 3, 5, 7, 7, 7, 7, 7, 7, 7, 7, 7, 3, 0, 0, 
-  0, 0, 0, 3, 7, 7, 7, 7, 7, 7, 7, 7, 3, 0, 0, 0, 
-  0, 0, 0, 3, 7, 7, 7, 7, 7, 7, 7, 7, 3, 0, 0, 0, 
-  0, 0, 0, 0, 3, 3, 7, 7, 7, 7, 3, 3, 0, 0, 0, 0, 
-  0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 3, 3, 5, 7, 7, 7, 3, 3, 0, 0, 0, 0,
+  0, 0, 0, 3, 5, 7, 7, 7, 7, 7, 7, 7, 3, 0, 0, 0,
+  0, 0, 0, 3, 5, 7, 7, 7, 0, 7, 7, 7, 3, 0, 0, 0,
+  0, 0, 3, 5, 7, 7, 7, 7, 0, 7, 7, 7, 7, 3, 0, 0,
+  0, 0, 3, 5, 7, 7, 7, 7, 0, 7, 7, 7, 7, 3, 0, 0,
+  0, 0, 3, 5, 7, 0, 0, 0, 0, 7, 7, 7, 7, 3, 0, 0,
+  0, 0, 3, 5, 7, 7, 7, 7, 7, 7, 7, 7, 7, 3, 0, 0,
+  0, 0, 0, 3, 7, 7, 7, 7, 7, 7, 7, 7, 3, 0, 0, 0,
+  0, 0, 0, 3, 7, 7, 7, 7, 7, 7, 7, 7, 3, 0, 0, 0,
+  0, 0, 0, 0, 3, 3, 7, 7, 7, 7, 3, 3, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
@@ -46,21 +50,64 @@ const uint8_t bluetoothSettingFrame[] PROGMEM = {
 const uint8_t game1Frame[] PROGMEM = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0,
-  0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
-  0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,
-  0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
-  0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
-  0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,
-  0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
-  0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
+  0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+  0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0,
+  0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0,
+  0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0,
+  0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0,
+  0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0,
+  0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0,
+  0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0,
+  0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0,
+  0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+  0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
+
+// Frame 16x16 cho GAME1 (256 bytes, 1 byte/pixel)
+const uint8_t game2Frame[] PROGMEM = {
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+  0, 0, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 0, 0, 
+  0, 0, 7, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 7, 0, 0, 
+  0, 0, 7, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 7, 0, 0, 
+  0, 0, 7, 7, 7, 7, 7, 5, 5, 7, 7, 7, 7, 7, 0, 0, 
+  0, 0, 0, 0, 0, 0, 7, 5, 5, 7, 0, 0, 0, 0, 0, 0, 
+  0, 0, 0, 0, 0, 0, 7, 5, 5, 7, 0, 0, 0, 0, 0, 0, 
+  0, 0, 0, 0, 0, 0, 7, 5, 5, 7, 0, 0, 0, 0, 0, 0, 
+  0, 0, 0, 0, 0, 0, 7, 5, 5, 7, 0, 0, 0, 0, 0, 0, 
+  0, 0, 0, 0, 0, 0, 7, 5, 5, 7, 0, 0, 0, 0, 0, 0, 
+  0, 0, 0, 0, 0, 0, 7, 5, 5, 7, 0, 0, 0, 0, 0, 0, 
+  0, 0, 0, 0, 0, 0, 7, 5, 5, 7, 0, 0, 0, 0, 0, 0, 
+  0, 0, 0, 0, 0, 0, 7, 7, 7, 7, 0, 0, 0, 0, 0, 0, 
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
+const uint8_t brightnessFrame[] PROGMEM = {
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 4, 4, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 4, 4, 0, 0, 0, 4, 4, 0, 0, 0, 4, 4, 0, 0,
+  0, 0, 4, 4, 4, 0, 0, 4, 4, 0, 0, 4, 4, 4, 0, 0,
+  0, 0, 0, 4, 4, 0, 0, 0, 0, 0, 0, 4, 4, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0,
+  0, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 0,
+  0, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 0,
+  0, 0, 0, 0, 0, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 4, 4, 0, 0, 0, 0, 0, 0, 4, 4, 0, 0, 0,
+  0, 0, 4, 4, 4, 0, 0, 4, 4, 0, 0, 4, 4, 4, 0, 0,
+  0, 0, 4, 4, 0, 0, 0, 4, 4, 0, 0, 0, 4, 4, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 4, 4, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
+// Declare global variables from clock_iot.ino
+extern uint32_t timestamp;
+extern int8_t offset;
 
 Menu::Menu() {
   _frame = 10;
@@ -85,14 +132,20 @@ void Menu::renderFrame(MenuOption option, CRGB* frame) {
   const uint8_t* frameData;
 
   switch (option) {
-    case TIME_SETTING:
+    case MenuOption::TIME_SETTING:
       frameData = timeSettingFrame;
       break;
-    case BLUETOOTH_SETTING:
+    case MenuOption::BLUETOOTH_SETTING:
       frameData = bluetoothSettingFrame;
       break;
-    case GAME1:
+    case MenuOption::GAME1:
       frameData = game1Frame;
+      break;
+    case MenuOption::GAME2:
+      frameData = game2Frame;
+      break;
+    case MenuOption::BRIGHTNESS_SETTING:
+      frameData = brightnessFrame;
       break;
     default:
       return;
@@ -217,19 +270,32 @@ void Menu::onButtonMenu(Callback callback) {
   State newState;
   if (callback) {
     Screen* s = NULL;
+    Serial.printf("\n[INFO]: _currentOption: %d", _currentOption);
     switch (_currentOption) {
-      case TIME_SETTING:
-        // s = new TimeSettingScreen(); // Thêm nếu cần
+      case MenuOption::TIME_SETTING:
+        s = new ClockSettingScreen(timestamp, offset);  // Pass global variables
+        newState = State::CLOCK_SETTING;
         break;
-      case BLUETOOTH_SETTING:
+      case MenuOption::BLUETOOTH_SETTING:
         // do nothing
-        newState = BLE;
+        newState = State::BLE;
         break;
-      case GAME1:
+      case MenuOption::GAME1:
+        s = new SnakeGame();
+        newState = GAME;
+        break;
+      case MenuOption::GAME2:
+        s = new TetrisGame();
+        newState = GAME;
+        break;
+      case MenuOption::BRIGHTNESS_SETTING:
+        s = new Brightness();
+        newState = State::BRIGHTNESS;
         break;
       default:
         return;
     }
+    Serial.printf("\n[INFO]: newState: %d", newState);
     if (s && _currentOption != BLUETOOTH_SETTING) callback(s, newState);
     else callback(NULL, newState);
   }

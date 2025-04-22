@@ -4,10 +4,10 @@
 #include <Arduino.h> 
 
 #ifndef BUZZER_PIN_1
-  #define BUZZER_PIN_1 9
+  #define BUZZER_PIN_1 6
 #endif
 #ifndef BUZZER_PIN_2
-  #define BUZZER_PIN_2 10
+  #define BUZZER_PIN_2 7
 #endif
 
 #define NOTE_C6  1047

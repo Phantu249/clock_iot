@@ -10,17 +10,18 @@
 #include "custom_screen.h"
 #include "ring.h"
 #include <string.h>
+#include "snake.h"
 
 String ssid;
 String password;
 Preferences preferences;
 
-static const uint32_t WIFI_TIMEOUT_MS = 10000;
+static const uint32_t WIFI_TIMEOUT_MS = 20000;
 
 uint32_t timestamp = 0;
 uint64_t lastUpdate = 0;
 int8_t offset = 7;
-char *ntpServer = "pool.ntp.org";
+char* ntpServer = "pool.ntp.org";
 
 CRGB frame[NUM_LEDS];       // 1D array for FastLED show
 Screen *screen;             // A pointer for main screen
@@ -93,7 +94,9 @@ public:
       Serial.println("\n[ERROR]: Unknown characteristic UUID");
     }
 
-    pCharacteristic->setValue("");
+    if (!uuid.equals(NimBLEUUID(WIFI_CHARACTERISTIC_UUID))) {
+      pCharacteristic->setValue("");
+    }
   };
 };
 
@@ -283,7 +286,7 @@ void wifiBLEHandler(std::string value, NimBLECharacteristic *pCharacteristic) {
   Serial.printf("\n[INFO]: Extracted SSID: %s, Password: %s", newSsid, newPassword);
   Serial.printf("\n[INFO]: Try to connect to WiFi %s", newSsid);
 
-  WiFi.begin(ssid.c_str(), password.c_str());
+  WiFi.begin(newSsid, newPassword);
 
   uint32_t start = millis();
   while (WiFi.status() != WL_CONNECTED) {
@@ -296,7 +299,7 @@ void wifiBLEHandler(std::string value, NimBLECharacteristic *pCharacteristic) {
       return;
     }
 
-    delay(500);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
     Serial.print(".");
   }
 
@@ -339,7 +342,8 @@ void getTime() {
       Serial.println("\n[ERROR]: WiFi timed out – skipping NTP sync");
       return;
     }
-    delay(500);
+
+    vTaskDelay(500 / portTICK_PERIOD_MS);
     Serial.print(".");
   }
 
@@ -366,13 +370,15 @@ void getTime() {
 
 void setup() {
   Serial.begin(9600);
+  randomSeed(analogRead(0));
 
   setupRing();
 
   preferences.begin("app", true);  //read only
+  uint8_t brightness = preferences.getUChar("brightness", 10);
   ssid = preferences.getString("ssid", "YOUR-SSID");
   password = preferences.getString("password", "YOUR-PASSWORD");
-  timeMode = static_cast<TimeMode>(preferences.getUChar("TIMEMODE", TimeMode::MANUAL));
+  timeMode = static_cast<TimeMode>(preferences.getUChar("time_mode", TimeMode::MANUAL));
   takeAlarmsOut();
   preferences.end();
 
@@ -390,7 +396,7 @@ void setup() {
   buttonQueue = xQueueCreate(10, sizeof(uint8_t));
 
   FastLED.addLeds<LED_TYPE, LED_PIN>(frame, NUM_LEDS);
-  FastLED.setBrightness(BRIGHTNESS);
+  FastLED.setBrightness(brightness);
 
   // Cấu hình các nút (attach Interrupt)
   for (int i = 0; i < numButtons; i++) {
@@ -411,7 +417,7 @@ void controllerTask(void *param) {
   while (1) {
     if (xQueueReceive(buttonQueue, &btn, portMAX_DELAY)) {
       switch (appState) {
-        case CLOCK:
+        case State::CLOCK:
           switch (btn) {
             case BUTTON_BACK:
               break;
@@ -431,7 +437,7 @@ void controllerTask(void *param) {
               break;
           }
           break;
-        case MENU:
+        case State::MENU:
           switch (btn) {
             case BUTTON_BACK:
               delete screen;
@@ -447,7 +453,7 @@ void controllerTask(void *param) {
               break;
           }
           break;
-        case CUSTOM:
+        case State::CUSTOM:
           switch (btn) {
             case BUTTON_BACK:
               delete screen;
@@ -463,9 +469,29 @@ void controllerTask(void *param) {
               break;
           }
           break;
-        case GAME:
+        case State::GAME:
+          screen->onButton(btn, callback);
           break;
-        case BLE:
+        case State::CLOCK_SETTING:
+          screen->onButton(btn, callback);
+          break;
+        case State::BRIGHTNESS:
+          switch (btn) {
+            case BUTTON_BACK:
+              delete screen;
+              screen = new Menu();
+              appState = MENU;
+              break;
+            case BUTTON_MENU:
+            case BUTTON_LEFT:
+            case BUTTON_RIGHT:
+            case BUTTON_DOWN:
+            case BUTTON_UP:
+              screen->onButton(btn);
+              break;
+          }
+          break;
+        case State::BLE:
           switch (btn) {
             case BUTTON_BACK:
               screen = new Menu();
@@ -495,6 +521,8 @@ void callback(void *s, State newState) {
 
   screen = s ? static_cast<Screen *>(s) : bleScreen;
   appState = newState;
+
+  Serial.printf("\n[INFO]: State: %d", appState);
 
   // change state to Ble -> start advertising ble
   if (newState == BLE) {
@@ -559,10 +587,10 @@ void intervalTimeUpdater(void *param) {
       }
 
       if (alarms[i].hour == hour && alarms[i].minute == minute && !alarmTriggered[i]) {
+        Serial.printf("\n[INFO]: Alarm %d triggered at %02d:%02d",
+              i + 1, alarms[i].hour, alarms[i].minute);
         ring();                    // Call the ring function
         alarmTriggered[i] = true;  // Mark alarm as triggered
-        Serial.printf("\n[INFO]: Alarm %d triggered at %02d:%02d",
-                      i + 1, alarms[i].hour, alarms[i].minute);
       } else if (alarms[i].hour != hour || alarms[i].minute != minute) {
         alarmTriggered[i] = false;  // Reset trigger state when time no longer matches
       }
