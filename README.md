@@ -54,7 +54,6 @@ Qua Library Manager trong Arduino IDE:
 - `FastLED`
 - `Preferences`
 - `BLEDevice`
-- `WiFi`, `time`
 - `ArduinoJson`
 
 ## ✍️ Tác giả / Nhóm thực hiện
