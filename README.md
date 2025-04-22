@@ -1,5 +1,16 @@
 # 🌟 Dự án: Đồng Hồ Đa Năng ESP32-S3 + WS2812
 
+## ✍️ Tác giả / Nhóm thực hiện
+
+**Nhóm 03**
+
+| Thành viên     | Vai trò                                      |
+|----------------|-----------------------------------------------|
+| Phan Văn Tú  | Thiết kế hệ thống, Lập trình ESP32 |
+| Dương Thanh Tùng | Lập trình ESP32  |
+| Vũ Xuân Tùng | Phát triển ứng dụng Web sử dụng BLE, Lập trình ESP32  |
+| Lê Quốc Trung | Phát triển ứng dụng Android    |
+
 ## 📌 Mục tiêu đề tài
 
 Thiết kế và phát triển một hệ thống **đồng hồ đa năng** sử dụng **vi điều khiển ESP32-S3** kết hợp với **màn hình LED WS2812 16x16**, **loa mini**, và **nút bấm vật lý**. Hệ thống cung cấp các chức năng:
@@ -56,14 +67,4 @@ Qua Library Manager trong Arduino IDE:
 - `BLEDevice`
 - `ArduinoJson`
 
-## ✍️ Tác giả / Nhóm thực hiện
-
-**Nhóm 03**
-
-| Thành viên     | Vai trò                                      |
-|----------------|-----------------------------------------------|
-| Phan Văn Tú  | Thiết kế hệ thống, Lập trình ESP32 |
-| Dương Thanh Tùng | Lập trình ESP32  |
-| Vũ Xuân Tùng | Phát triển ứng dụng Web sử dụng BLE, Lập trình ESP32  |
-| Lê Quốc Trung | Phát triển ứng dụng Android    |
 
