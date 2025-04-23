@@ -49,6 +49,6 @@ void ring() {
       int volume = melody[i].volume;
       playNote(note, duration, volume);
     }
-    delay(400);
+    vTaskDelay(pdMS_TO_TICKS(400));
   }
 }

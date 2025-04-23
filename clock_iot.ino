@@ -349,8 +349,7 @@ void getTime() {
 
   Serial.println("\n[INFO]: WiFi connected, ready to sync time");
 
-  int32_t gmtOffsetSec = offset * 3600;
-  configTime(gmtOffsetSec, 0, ntpServer);
+  configTime(0, 0, ntpServer);
 
   struct tm timeinfo;
   if (!getLocalTime(&timeinfo)) {
